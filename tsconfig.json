@@ -9,8 +9,7 @@
     "strict": true,
     "skipLibCheck": true,
     "rootDir": "src",
-    "outDir": "dist",
-    "preserveShebang": true
+    "outDir": "dist"
   },
   "include": [
     "src"

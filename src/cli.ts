@@ -1,0 +1,73 @@
+/**
+ * CLI argument parsing and validation
+ */
+
+import fs from "node:fs/promises";
+import path from "node:path";
+import minimist from "minimist";
+import { crawl } from "./crawler.js";
+import { safeFilename, ensureDir } from "./utils/filesystem.js";
+
+/**
+ * Parse CLI arguments and run the crawler
+ */
+export async function runCLI(): Promise<void> {
+  const argv = minimist(process.argv.slice(2), {
+    boolean: ["sitemap", "allowExternalAssets"],
+    string: ["placeholder"],
+    default: {
+      maxDepth: 2,
+      concurrency: 8,
+      sitemap: true,
+      allowExternalAssets: true,
+      placeholder: "external",
+    },
+  });
+
+  const [start] = argv._;
+  if (!start) {
+    console.error(
+      "Usage: site-scraper <url> [--maxDepth 2] [--concurrency 8] [--placeholder external|local] [--sitemap] [--allowExternalAssets]",
+    );
+    process.exit(1);
+  }
+
+  let startUrl: URL;
+  try {
+    startUrl = new URL(String(start));
+  } catch {
+    console.error("Invalid URL provided");
+    process.exit(1);
+  }
+
+  if (typeof (argv as any).out !== "undefined") {
+    console.warn(
+      "The --out option is ignored; output is always written to ./output/<domain>.",
+    );
+  }
+
+  const requestedOut = safeFilename(startUrl.host);
+  if (!requestedOut) {
+    console.error("Unable to derive output directory name");
+    process.exit(1);
+  }
+
+  const baseOutput = path.resolve(process.cwd(), "output");
+  await ensureDir(baseOutput);
+  const outDir = path.join(baseOutput, requestedOut);
+  const maxDepth = Number(argv.maxDepth ?? 2);
+  const concurrency = Number(argv.concurrency ?? 8);
+  const placeholder =
+    (argv.placeholder as string) === "local" ? "local" : "external";
+
+  await fs.rm(outDir, { recursive: true, force: true });
+  await ensureDir(outDir);
+
+  await crawl(startUrl.toString(), outDir, {
+    maxDepth,
+    concurrency,
+    sitemap: Boolean(argv.sitemap),
+    allowExternalAssets: Boolean(argv.allowExternalAssets),
+    placeholder,
+  });
+}
