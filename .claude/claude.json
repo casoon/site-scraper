@@ -1,0 +1,114 @@
+{
+  "name": "Site Scraper",
+  "description": "A TypeScript CLI tool for mirroring websites locally with HTML, CSS, and placeholder images",
+  "projectInfo": {
+    "type": "TypeScript CLI Tool",
+    "runtime": "Node.js >= 18",
+    "packageManager": "pnpm",
+    "mainFeatures": [
+      "Recursive website crawling with configurable depth",
+      "Sitemap.xml discovery and integration",
+      "Local asset downloading (CSS, JS, fonts)",
+      "Image placeholder generation (external or local)",
+      "URL rewriting for offline browsing",
+      "Parallel download support with configurable concurrency"
+    ]
+  },
+  "structure": {
+    "src/": "Source code directory",
+    "src/utils/": "Utility functions (filesystem, URL handling)",
+    "src/network/": "Network-related functionality (fetch with retry)",
+    "src/parsers/": "Parsing logic (sitemaps, links)",
+    "src/processors/": "Content processors (HTML, CSS, images)",
+    "output/": "Generated output directory (git-ignored)"
+  },
+  "conventions": {
+    "codeStyle": {
+      "language": "TypeScript with strict mode",
+      "moduleSystem": "ES Modules (type: module)",
+      "imports": "Use node: prefix for built-in modules",
+      "exports": "Named exports preferred, default for main functions",
+      "asyncAwait": "Prefer async/await over promises",
+      "errorHandling": "Try-catch with graceful fallbacks"
+    },
+    "naming": {
+      "files": "kebab-case (e.g., fetch-retry.ts)",
+      "functions": "camelCase with descriptive names",
+      "constants": "UPPER_SNAKE_CASE for true constants",
+      "types": "PascalCase for interfaces and types"
+    },
+    "architecture": {
+      "modularity": "Separate concerns into focused modules",
+      "dependencies": "Minimize cross-module dependencies",
+      "configuration": "Options passed as objects, not individual params",
+      "pure": "Keep utility functions pure where possible"
+    }
+  },
+  "development": {
+    "scripts": {
+      "dev": "tsx src/index.ts <url> [options] - Run in development mode",
+      "build": "tsc -p tsconfig.json - Compile TypeScript to dist/",
+      "start": "node dist/index.js <url> [options] - Run compiled version"
+    },
+    "testing": {
+      "manual": "Test with: pnpm run dev https://example.com --maxDepth 1",
+      "checks": [
+        "Verify output in ./output/<domain>/",
+        "Check HTML files render correctly",
+        "Verify CSS and assets are downloaded",
+        "Confirm images are replaced with placeholders"
+      ]
+    }
+  },
+  "dependencies": {
+    "core": {
+      "cheerio": "HTML parsing and manipulation",
+      "minimist": "CLI argument parsing",
+      "p-limit": "Concurrency control for parallel downloads",
+      "probe-image-size": "Fast image dimension detection"
+    },
+    "optional": {
+      "sharp": "Local PNG placeholder generation (falls back to external if not installed)"
+    }
+  },
+  "cli": {
+    "usage": "site-scraper <url> [options]",
+    "options": {
+      "--maxDepth": "Maximum crawl depth (default: 2)",
+      "--concurrency": "Parallel download limit (default: 8)",
+      "--placeholder": "Image strategy: 'external' or 'local' (default: external)",
+      "--sitemap": "Parse sitemap.xml for seed URLs (default: true)",
+      "--allowExternalAssets": "Download external CSS/JS (default: true)"
+    },
+    "examples": [
+      "pnpm run dev https://www.example.com --maxDepth 2 --placeholder local",
+      "pnpm run dev https://www.example.com --sitemap false --concurrency 4"
+    ]
+  },
+  "features": {
+    "crawling": {
+      "description": "Discovers pages via links and optional sitemap.xml",
+      "sameOrigin": "Only crawls pages from the same domain",
+      "depth": "Respects --maxDepth to limit recursion",
+      "deduplication": "Tracks visited URLs to avoid duplicates"
+    },
+    "assets": {
+      "css": "Downloads and rewrites url() references",
+      "js": "Downloads same-origin scripts",
+      "images": "Replaces with dimension-matched placeholders",
+      "fonts": "Downloaded via CSS url() processing"
+    },
+    "output": {
+      "structure": "Mirrors URL path structure",
+      "indexFiles": "Directories get index.html",
+      "relativeLinks": "All internal links are rewritten to relative paths",
+      "cleanup": "Output directory is cleared before each run"
+    }
+  },
+  "knownLimitations": {
+    "spa": "JavaScript-rendered content (SPAs) may not be captured",
+    "dynamic": "Dynamic content loaded after page load is not included",
+    "authentication": "No support for authenticated pages",
+    "respectsRobots": "Does not check robots.txt (use responsibly)"
+  }
+}
