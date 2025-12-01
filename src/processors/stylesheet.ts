@@ -17,10 +17,12 @@ export async function processStylesheet(
   cssUrl: URL,
   outDir: string,
   allowExternalAssets: boolean,
-  refererFile: string,
 ): Promise<string> {
   const res = await fetchWithRetry(cssUrl.toString());
   const css = await res.text();
+
+  // Determine the local path of the CSS file first (needed for relative path calculation)
+  const cssPath = urlToLocalPath(root, cssUrl, outDir);
 
   const assetRe = /url\(([^)]+)\)/g; // naive but works for most cases
   const tasks: Array<Promise<void>> = [];
@@ -35,14 +37,13 @@ export async function processStylesheet(
       if (isExternal && !allowExternalAssets) return match; // keep as-is
       const localPath = urlToLocalPath(root, assetUrl, outDir);
       tasks.push(downloadBinary(assetUrl.toString(), localPath));
-      const rel = makeRelative(refererFile, localPath);
+      // Calculate relative path from CSS file to asset (not from HTML referer)
+      const rel = makeRelative(cssPath, localPath);
       return `url(${rel})`;
     } catch {
       return match;
     }
   });
-
-  const cssPath = urlToLocalPath(root, cssUrl, outDir);
   await ensureDir(path.dirname(cssPath));
   await fs.writeFile(cssPath, rewritten, "utf8");
   await Promise.all(tasks);

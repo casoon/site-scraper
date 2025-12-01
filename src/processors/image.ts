@@ -4,6 +4,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+// @ts-ignore - no type declarations available
 import probe from "probe-image-size";
 import { fetchWithRetry } from "../network/fetch.js";
 import { urlToLocalPath } from "../utils/url.js";

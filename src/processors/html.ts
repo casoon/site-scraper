@@ -44,7 +44,6 @@ export async function rewriteAndSaveHTML(
             url,
             outDir,
             opts.allowExternalAssets,
-            urlToLocalPath(root, pageUrl, outDir),
           );
           const rel = makeRelative(
             urlToLocalPath(root, pageUrl, outDir),
