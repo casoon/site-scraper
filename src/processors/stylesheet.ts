@@ -36,7 +36,9 @@ export async function processStylesheet(
       const isExternal = assetUrl.origin !== root.origin;
       if (isExternal && !allowExternalAssets) return match; // keep as-is
       const localPath = urlToLocalPath(root, assetUrl, outDir);
-      tasks.push(downloadBinary(assetUrl.toString(), localPath));
+      // Silent mode for images - they'll be replaced with placeholders anyway
+      const isImage = /\.(png|jpe?g|gif|svg|webp|ico)$/i.test(localPath);
+      tasks.push(downloadBinary(assetUrl.toString(), localPath, isImage));
       // Calculate relative path from CSS file to asset (not from HTML referer)
       const rel = makeRelative(cssPath, localPath);
       return `url(${rel})`;

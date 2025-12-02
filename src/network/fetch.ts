@@ -74,10 +74,12 @@ export async function fetchWithRetry(
 /**
  * Download binary asset (image/font/js etc.) to a local file
  * Returns true if successful, false if the asset could not be downloaded
+ * Set silent=true to suppress warnings for expected failures (e.g. images)
  */
 export async function downloadBinary(
   url: string,
   dest: string,
+  silent = false,
 ): Promise<boolean> {
   try {
     await ensureDir(dest.substring(0, dest.lastIndexOf("/")));
@@ -86,8 +88,10 @@ export async function downloadBinary(
     await fs.writeFile(dest, buf);
     return true;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`Skipping asset ${url}: ${msg}`);
+    if (!silent) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`Skipping asset ${url}: ${msg}`);
+    }
     return false;
   }
 }
