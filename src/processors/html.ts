@@ -68,12 +68,14 @@ export async function rewriteAndSaveHTML(
       jsTasks.push(
         (async () => {
           const jsPath = urlToLocalPath(root, url, outDir, ".js");
-          await downloadBinary(url.toString(), jsPath);
-          const rel = makeRelative(
-            urlToLocalPath(root, pageUrl, outDir),
-            jsPath,
-          );
-          $(el).attr("src", rel);
+          const ok = await downloadBinary(url.toString(), jsPath);
+          if (ok) {
+            const rel = makeRelative(
+              urlToLocalPath(root, pageUrl, outDir),
+              jsPath,
+            );
+            $(el).attr("src", rel);
+          }
         })(),
       );
     } catch {

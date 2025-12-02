@@ -7,6 +7,7 @@ import path from "node:path";
 import minimist from "minimist";
 import { crawl } from "./crawler.js";
 import { safeFilename, ensureDir } from "./utils/filesystem.js";
+import { configureRequests } from "./network/fetch.js";
 
 /**
  * Parse CLI arguments and run the crawler
@@ -14,23 +15,31 @@ import { safeFilename, ensureDir } from "./utils/filesystem.js";
 export async function runCLI(): Promise<void> {
   const argv = minimist(process.argv.slice(2), {
     boolean: ["sitemap", "allowExternalAssets"],
-    string: ["placeholder"],
+    string: ["placeholder", "userAgent"],
     default: {
       maxDepth: 2,
-      concurrency: 8,
+      concurrency: 4,
       sitemap: true,
       allowExternalAssets: true,
       placeholder: "external",
+      delayMs: 300,
     },
   });
 
   const [start] = argv._;
   if (!start) {
     console.error(
-      "Usage: site-scraper <url> [--maxDepth 2] [--concurrency 8] [--placeholder external|local] [--sitemap] [--allowExternalAssets]",
+      "Usage: site-scraper <url> [--maxDepth 2] [--concurrency 4] [--delayMs 300] [--placeholder external|local] [--sitemap] [--allowExternalAssets] [--userAgent <string>]",
     );
     process.exit(1);
   }
+
+  // Configure request settings
+  const delayMs = Number(argv.delayMs ?? 300);
+  configureRequests({
+    delayMs: Number.isFinite(delayMs) && delayMs >= 0 ? delayMs : 300,
+    userAgent: typeof argv.userAgent === "string" ? argv.userAgent : undefined,
+  });
 
   let startUrl: URL;
   try {

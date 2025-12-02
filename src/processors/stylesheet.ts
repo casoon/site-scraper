@@ -25,7 +25,7 @@ export async function processStylesheet(
   const cssPath = urlToLocalPath(root, cssUrl, outDir);
 
   const assetRe = /url\(([^)]+)\)/g; // naive but works for most cases
-  const tasks: Array<Promise<void>> = [];
+  const tasks: Array<Promise<boolean>> = [];
   let rewritten = css.replace(assetRe, (match, p1) => {
     const raw = String(p1)
       .trim()
