@@ -2,12 +2,12 @@
 
 [![CI](https://github.com/casoon/site-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/casoon/site-scraper/actions/workflows/ci.yml)
 
-Ein kleines Node.js-CLI-Tool, das statische Kopien von Websites erstellt. Es durchsucht eine Start-URL, speichert HTML-Dateien samt Stylesheets/Skripten lokal und ersetzt Bilder je nach Konfiguration durch Platzhalter.
+A small Node.js CLI tool that creates static copies of websites. It crawls from a starting URL, saves HTML files along with stylesheets and scripts locally, and replaces images with placeholders based on configuration.
 
-## Voraussetzungen
+## Prerequisites
 
-- Node.js ≥ 24 (wegen nativer `fetch`-Unterstützung)
-- pnpm als Paketmanager (alternativ funktionieren npm oder yarn, die Befehle unten sind jedoch für pnpm beschrieben)
+- Node.js >= 24 (for native `fetch` support)
+- pnpm as package manager (npm or yarn work as well, but the commands below are for pnpm)
 
 ## Installation
 
@@ -15,52 +15,52 @@ Ein kleines Node.js-CLI-Tool, das statische Kopien von Websites erstellt. Es dur
 pnpm install
 ```
 
-## Verwendung
+## Usage
 
 ```sh
 pnpm run dev <URL> [--maxDepth 2] [--concurrency 8] [--placeholder external|local] [--sitemap] [--allowExternalAssets]
 ```
 
-Beispiel:
+Example:
 
 ```sh
-pnpm run dev https://www.casoon.de --maxDepth 2 --placeholder local
+pnpm run dev https://www.example.com --maxDepth 2 --placeholder local
 ```
 
-### Ausgabe
+### Output
 
-- Alle Ergebnisse werden automatisch unter `./output/<domain>` gespeichert.
-- Existiert der Ordner bereits, wird er vor dem Lauf gelöscht und neu angelegt.
-- HTML-Dateien werden in einer Ordnerstruktur analog zur URL abgelegt.
-- Assets (CSS/JS/Fonts) werden heruntergeladen und interne Referenzen angepasst.
-- Bilder können je nach `--placeholder`-Option durch externe Platzhalter (`external`) oder durch lokal generierte PNGs (`local`, erfordert optional `sharp`) ersetzt werden.
+- All results are automatically saved to `./output/<domain>`.
+- If the folder already exists, it will be deleted and recreated before the run.
+- HTML files are stored in a folder structure matching the URL paths.
+- Assets (CSS/JS/Fonts) are downloaded and internal references are rewritten.
+- Images can be replaced with external placeholders (`external`) or locally generated PNGs (`local`, optionally requires `sharp`).
 
-### Wichtige Optionen
+### Options
 
-- `--maxDepth`: Maximale Klicktiefe relativ zur Startseite (Standard: `2`).
-- `--concurrency`: Anzahl paralleler Downloads (Standard: `8`).
-- `--sitemap`: Wenn gesetzt (Standard: `true`), werden zusätzlich Einträge aus `/sitemap.xml` bzw. `/sitemap_index.xml` als Startpunkte verwendet.
-- `--allowExternalAssets`: Wenn `false`, werden externe CSS/JS/Assets nicht heruntergeladen (Standard: `true`).
+- `--maxDepth`: Maximum crawl depth relative to the start page (default: `2`).
+- `--concurrency`: Number of parallel downloads (default: `8`).
+- `--sitemap`: When set (default: `true`), entries from `/sitemap.xml` or `/sitemap_index.xml` are also used as starting points.
+- `--allowExternalAssets`: When `false`, external CSS/JS/assets are not downloaded (default: `true`).
 
 ## Build
 
-Um eine kompilierte Ausgabe unter `dist/` zu erzeugen:
+To create a compiled output in `dist/`:
 
 ```sh
 pnpm run build
 ```
 
-## Linting & Formatierung
+## Linting & Formatting
 
-Das Projekt verwendet [Biome](https://biomejs.dev/) für Linting und Formatierung:
+This project uses [Biome](https://biomejs.dev/) for linting and formatting:
 
 ```sh
-pnpm run check      # Lint + Format prüfen
-pnpm run check:fix  # Automatisch beheben
-pnpm run lint       # Nur Linting
-pnpm run format     # Nur Formatierung
+pnpm run check      # Check lint + format
+pnpm run check:fix  # Auto-fix issues
+pnpm run lint       # Lint only
+pnpm run format     # Format only
 ```
 
-## Lizenz
+## License
 
-Dieses Projekt steht unter der [MIT-Lizenz](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
