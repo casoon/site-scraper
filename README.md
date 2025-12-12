@@ -1,10 +1,12 @@
 # Site Scraper
 
+[![CI](https://github.com/casoon/site-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/casoon/site-scraper/actions/workflows/ci.yml)
+
 Ein kleines Node.js-CLI-Tool, das statische Kopien von Websites erstellt. Es durchsucht eine Start-URL, speichert HTML-Dateien samt Stylesheets/Skripten lokal und ersetzt Bilder je nach Konfiguration durch Platzhalter.
 
 ## Voraussetzungen
 
-- Node.js ≥ 18 (wegen nativer `fetch`-Unterstützung)
+- Node.js ≥ 24 (wegen nativer `fetch`-Unterstützung)
 - pnpm als Paketmanager (alternativ funktionieren npm oder yarn, die Befehle unten sind jedoch für pnpm beschrieben)
 
 ## Installation
@@ -46,6 +48,17 @@ Um eine kompilierte Ausgabe unter `dist/` zu erzeugen:
 
 ```sh
 pnpm run build
+```
+
+## Linting & Formatierung
+
+Das Projekt verwendet [Biome](https://biomejs.dev/) für Linting und Formatierung:
+
+```sh
+pnpm run check      # Lint + Format prüfen
+pnpm run check:fix  # Automatisch beheben
+pnpm run lint       # Nur Linting
+pnpm run format     # Nur Formatierung
 ```
 
 ## Lizenz

@@ -2,26 +2,26 @@
  * CLI argument parsing and validation
  */
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import minimist from "minimist";
-import { crawl } from "./crawler.js";
-import { safeFilename, ensureDir } from "./utils/filesystem.js";
-import { configureRequests } from "./network/fetch.js";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import minimist from 'minimist';
+import { crawl } from './crawler.js';
+import { configureRequests } from './network/fetch.js';
+import { ensureDir, safeFilename } from './utils/filesystem.js';
 
 /**
  * Parse CLI arguments and run the crawler
  */
 export async function runCLI(): Promise<void> {
   const argv = minimist(process.argv.slice(2), {
-    boolean: ["sitemap", "allowExternalAssets"],
-    string: ["placeholder", "userAgent"],
+    boolean: ['sitemap', 'allowExternalAssets'],
+    string: ['placeholder', 'userAgent'],
     default: {
       maxDepth: 2,
       concurrency: 4,
       sitemap: true,
       allowExternalAssets: true,
-      placeholder: "external",
+      placeholder: 'external',
       delayMs: 300,
     },
   });
@@ -29,7 +29,7 @@ export async function runCLI(): Promise<void> {
   const [start] = argv._;
   if (!start) {
     console.error(
-      "Usage: site-scraper <url> [--maxDepth 2] [--concurrency 4] [--delayMs 300] [--placeholder external|local] [--sitemap] [--allowExternalAssets] [--userAgent <string>]",
+      'Usage: site-scraper <url> [--maxDepth 2] [--concurrency 4] [--delayMs 300] [--placeholder external|local] [--sitemap] [--allowExternalAssets] [--userAgent <string>]',
     );
     process.exit(1);
   }
@@ -38,36 +38,33 @@ export async function runCLI(): Promise<void> {
   const delayMs = Number(argv.delayMs ?? 300);
   configureRequests({
     delayMs: Number.isFinite(delayMs) && delayMs >= 0 ? delayMs : 300,
-    userAgent: typeof argv.userAgent === "string" ? argv.userAgent : undefined,
+    userAgent: typeof argv.userAgent === 'string' ? argv.userAgent : undefined,
   });
 
   let startUrl: URL;
   try {
     startUrl = new URL(String(start));
   } catch {
-    console.error("Invalid URL provided");
+    console.error('Invalid URL provided');
     process.exit(1);
   }
 
-  if (typeof (argv as any).out !== "undefined") {
-    console.warn(
-      "The --out option is ignored; output is always written to ./output/<domain>.",
-    );
+  if (typeof (argv as Record<string, unknown>).out !== 'undefined') {
+    console.warn('The --out option is ignored; output is always written to ./output/<domain>.');
   }
 
   const requestedOut = safeFilename(startUrl.host);
   if (!requestedOut) {
-    console.error("Unable to derive output directory name");
+    console.error('Unable to derive output directory name');
     process.exit(1);
   }
 
-  const baseOutput = path.resolve(process.cwd(), "output");
+  const baseOutput = path.resolve(process.cwd(), 'output');
   await ensureDir(baseOutput);
   const outDir = path.join(baseOutput, requestedOut);
   const maxDepth = Number(argv.maxDepth ?? 2);
   const concurrency = Number(argv.concurrency ?? 8);
-  const placeholder =
-    (argv.placeholder as string) === "local" ? "local" : "external";
+  const placeholder = (argv.placeholder as string) === 'local' ? 'local' : 'external';
 
   await fs.rm(outDir, { recursive: true, force: true });
   await ensureDir(outDir);

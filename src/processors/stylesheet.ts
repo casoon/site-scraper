@@ -2,11 +2,11 @@
  * CSS stylesheet processing utilities
  */
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import { fetchWithRetry, downloadBinary } from "../network/fetch.js";
-import { urlToLocalPath, makeRelative } from "../utils/url.js";
-import { ensureDir } from "../utils/filesystem.js";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { downloadBinary, fetchWithRetry } from '../network/fetch.js';
+import { ensureDir } from '../utils/filesystem.js';
+import { makeRelative, urlToLocalPath } from '../utils/url.js';
 
 /**
  * Download a stylesheet and rewrite its url() assets to local files
@@ -26,11 +26,11 @@ export async function processStylesheet(
 
   const assetRe = /url\(([^)]+)\)/g; // naive but works for most cases
   const tasks: Array<Promise<boolean>> = [];
-  let rewritten = css.replace(assetRe, (match, p1) => {
+  const rewritten = css.replace(assetRe, (match, p1) => {
     const raw = String(p1)
       .trim()
-      .replace(/^['"]|['"]$/g, "");
-    if (!raw || raw.startsWith("data:")) return match; // leave data URIs
+      .replace(/^['"]|['"]$/g, '');
+    if (!raw || raw.startsWith('data:')) return match; // leave data URIs
     try {
       const assetUrl = new URL(raw, cssUrl);
       const isExternal = assetUrl.origin !== root.origin;
@@ -47,7 +47,7 @@ export async function processStylesheet(
     }
   });
   await ensureDir(path.dirname(cssPath));
-  await fs.writeFile(cssPath, rewritten, "utf8");
+  await fs.writeFile(cssPath, rewritten, 'utf8');
   await Promise.all(tasks);
   return cssPath;
 }

@@ -2,19 +2,19 @@
  * Image placeholder processing utilities
  */
 
-import fs from "node:fs/promises";
-import path from "node:path";
-// @ts-ignore - no type declarations available
-import probe from "probe-image-size";
-import { fetchWithRetry } from "../network/fetch.js";
-import { urlToLocalPath } from "../utils/url.js";
-import { ensureDir } from "../utils/filesystem.js";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import probe from 'probe-image-size';
+import { fetchWithRetry } from '../network/fetch.js';
+import { ensureDir } from '../utils/filesystem.js';
+import { urlToLocalPath } from '../utils/url.js';
 
 // Attempt to import sharp lazily (optional)
+// biome-ignore lint/suspicious/noExplicitAny: sharp types are complex and optional
 let sharp: any = null;
 (async () => {
   try {
-    sharp = (await import("sharp")).default;
+    sharp = (await import('sharp')).default;
   } catch {
     /* optional dependency */
   }
@@ -33,7 +33,7 @@ export interface PlaceholderResult {
  */
 export async function getPlaceholderForImage(
   imgUrl: URL,
-  strategy: "external" | "local",
+  strategy: 'external' | 'local',
   outDir: string,
   root: URL,
 ): Promise<PlaceholderResult> {
@@ -42,7 +42,8 @@ export async function getPlaceholderForImage(
   let height: number | undefined;
   try {
     const r = await fetchWithRetry(imgUrl.toString());
-    const stream = r.body as any; // web stream -> node readable via experimental; probe supports WHATWG streams
+    // biome-ignore lint/suspicious/noExplicitAny: probe-image-size accepts WHATWG streams
+    const stream = r.body as any;
     const meta = await probe(stream);
     width = meta.width;
     height = meta.height;
@@ -52,8 +53,8 @@ export async function getPlaceholderForImage(
     height = 450;
   }
 
-  if (strategy === "local" && sharp) {
-    const ext = ".png";
+  if (strategy === 'local' && sharp) {
+    const ext = '.png';
     const localPath = urlToLocalPath(root, imgUrl, outDir, ext);
     await ensureDir(path.dirname(localPath));
     const w = Math.max(1, Math.min(4096, width ?? 800));

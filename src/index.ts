@@ -19,7 +19,7 @@
  * Node >= 18 recommended (for global fetch).
  */
 
-import { runCLI } from "./cli.js";
+import { runCLI } from './cli.js';
 
 runCLI().catch((err) => {
   console.error(err);

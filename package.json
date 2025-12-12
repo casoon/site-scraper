@@ -1,6 +1,6 @@
 {
   "name": "site-scraper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI utility to mirror a website (HTML + CSS) into a local folder.",
   "type": "module",
   "bin": {
@@ -9,7 +9,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "lint": "biome lint src",
+    "format": "biome format src --write",
+    "check": "biome check src",
+    "check:fix": "biome check src --write"
   },
   "engines": {
     "node": ">=24"
@@ -24,6 +28,7 @@
     "sharp": "^0.33.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
     "@types/minimist": "^1.2.5",
     "@types/node": "^24.10.1",
     "@types/probe-image-size": "^7.2.5",
