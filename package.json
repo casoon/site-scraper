@@ -1,6 +1,6 @@
 {
   "name": "site-scraper",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "CLI utility to mirror a website (HTML + CSS) into a local folder.",
   "type": "module",
   "bin": {
@@ -22,7 +22,8 @@
     "cheerio": "^1.0.0-rc.12",
     "minimist": "^1.2.8",
     "p-limit": "^4.0.0",
-    "probe-image-size": "^7.2.3"
+    "probe-image-size": "^7.2.3",
+    "puppeteer": "^24.34.0"
   },
   "optionalDependencies": {
     "sharp": "^0.33.2"
