@@ -68,7 +68,7 @@ export async function runCLI(): Promise<void> {
       configureRequests({ cookies, userAgent });
       console.log("Continuing with authenticated session.\n");
     }
-  } catch (err) {
+  } catch {
     // If test fetch fails, try to solve challenge anyway
     console.log("Initial request failed. Attempting browser-based access...\n");
     try {

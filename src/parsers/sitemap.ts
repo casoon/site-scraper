@@ -2,7 +2,7 @@
  * Sitemap.xml parsing utilities
  */
 
-import { fetchWithPuppeteer, hasBrowserSession } from "../network/challenge.js";
+import { hasBrowserSession } from "../network/challenge.js";
 import { fetchWithRetry } from "../network/fetch.js";
 
 /**

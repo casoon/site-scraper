@@ -82,7 +82,7 @@ function buildRequestHeaders(url: string): Record<string, string> {
     // Use the target URL's origin as referer for first request
     try {
       const urlObj = new URL(url);
-      headers.Referer = urlObj.origin + "/";
+      headers.Referer = `${urlObj.origin}/`;
       headers.Origin = urlObj.origin;
     } catch {
       // Keep default headers if URL parsing fails
