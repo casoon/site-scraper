@@ -2,65 +2,90 @@
 
 [![CI](https://github.com/casoon/site-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/casoon/site-scraper/actions/workflows/ci.yml)
 
-A small Node.js CLI tool that creates static copies of websites. It crawls from a starting URL, saves HTML files along with stylesheets and scripts locally, and replaces images with placeholders based on configuration.
+A fast CLI tool written in Rust that creates static copies of websites. It crawls from a starting URL, saves HTML files along with stylesheets and scripts locally, and replaces images with placeholders.
 
-## Prerequisites
+## Why?
 
-- Node.js >= 24 (for native `fetch` support)
-- pnpm as package manager (npm or yarn work as well, but the commands below are for pnpm)
+When migrating client websites from a CMS (WordPress, TYPO3, Drupal, etc.) to a modern stack like Astro, the old site often needs to be preserved first. Site Scraper creates a complete static snapshot of the existing site before the relaunch -- as a reference, for content extraction, or simply as a backup. Instead of relying on the CMS staying online, you get a self-contained local copy with all HTML, CSS, JS and fonts in place.
 
 ## Installation
 
+### via curl
+
 ```sh
-pnpm install
+curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash
+```
+
+Custom install directory:
+
+```sh
+INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash
+```
+
+### via Cargo
+
+```sh
+cargo install --git https://github.com/casoon/site-scraper
+```
+
+### From source
+
+```sh
+git clone https://github.com/casoon/site-scraper.git
+cd site-scraper
+cargo install --path .
 ```
 
 ## Usage
 
 ```sh
-pnpm run dev <URL> [--maxDepth 2] [--concurrency 8] [--placeholder external|local] [--sitemap] [--allowExternalAssets]
+site-scraper <URL> [OPTIONS]
 ```
 
-Example:
+### Examples
 
 ```sh
-pnpm run dev https://www.example.com --maxDepth 2 --placeholder local
+# Standard crawl (simulates a browser)
+site-scraper https://www.example.com
+
+# Identify as bot/crawler
+site-scraper https://www.example.com --bot
+
+# Deeper crawl with local image placeholders
+site-scraper https://www.example.com --max-depth 3 --placeholder local
+
+# Faster crawl with more concurrency and less delay
+site-scraper https://www.example.com --concurrency 8 --delay-ms 100
 ```
 
 ### Output
 
-- All results are automatically saved to `./output/<domain>`.
-- If the folder already exists, it will be deleted and recreated before the run.
-- HTML files are stored in a folder structure matching the URL paths.
-- Assets (CSS/JS/Fonts) are downloaded and internal references are rewritten.
-- Images can be replaced with external placeholders (`external`) or locally generated PNGs (`local`, optionally requires `sharp`).
+All results are saved to `./output/<domain>/`. The folder is recreated on each run. HTML files are stored in a directory structure matching the URL paths. CSS, JS and fonts are downloaded and all references are rewritten to local relative paths. Images are replaced with placeholders.
 
 ### Options
 
-- `--maxDepth`: Maximum crawl depth relative to the start page (default: `2`).
-- `--concurrency`: Number of parallel downloads (default: `8`).
-- `--sitemap`: When set (default: `true`), entries from `/sitemap.xml` or `/sitemap_index.xml` are also used as starting points.
-- `--allowExternalAssets`: When `false`, external CSS/JS/assets are not downloaded (default: `true`).
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--max-depth` | `2` | Maximum crawl depth relative to the start page |
+| `--concurrency` | `4` | Number of parallel downloads |
+| `--delay-ms` | `300` | Delay between requests in milliseconds |
+| `--placeholder` | `external` | Image placeholder strategy: `external` (placehold.co) or `local` (generated PNG) |
+| `--sitemap` | `true` | Include sitemap.xml URLs as seeds |
+| `--allow-external-assets` | `true` | Download external CSS/JS or leave as-is |
+| `--bot` | `false` | Identify as crawler instead of simulating a browser |
+| `--user-agent` | - | Custom User-Agent header (overrides `--bot`) |
+| `--referer` | - | Custom Referer header |
+
+### Identity Modes
+
+By default, site-scraper sends realistic browser headers (Chrome User-Agent, Sec-Ch-Ua, etc.) to avoid bot detection. With `--bot`, it identifies honestly as `site-scraper/1.2` and sends minimal headers.
 
 ## Build
 
-To create a compiled output in `dist/`:
-
 ```sh
-pnpm run build
-```
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting:
-
-```sh
-pnpm run check      # Check lint + format
-pnpm run check:fix  # Auto-fix issues
-pnpm run lint       # Lint only
-pnpm run format     # Format only
+cargo build --release
 ```
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT](LICENSE)
