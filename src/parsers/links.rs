@@ -32,5 +32,7 @@ pub fn extract_links(html: &str, root: &Url, doc_url: &Url) -> Vec<Url> {
         }
     }
 
-    seen.into_iter().filter_map(|s| Url::parse(&s).ok()).collect()
+    seen.into_iter()
+        .filter_map(|s| Url::parse(&s).ok())
+        .collect()
 }

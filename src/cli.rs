@@ -9,7 +9,11 @@ use crate::network::fetch::{configure_requests, ConfigureOptions};
 use crate::utils::filesystem::{ensure_dir, safe_filename};
 
 #[derive(Parser)]
-#[command(name = "site-scraper", version, about = "CLI utility to mirror a website (HTML + CSS) into a local folder.")]
+#[command(
+    name = "site-scraper",
+    version,
+    about = "CLI utility to mirror a website (HTML + CSS) into a local folder."
+)]
 struct Args {
     /// URL to scrape
     url: String,

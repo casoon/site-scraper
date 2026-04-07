@@ -6,7 +6,12 @@ use super::filesystem::safe_filename;
 
 /// Map a URL to a local file path inside `out_dir`.
 /// Handles both same-origin and external URLs.
-pub fn url_to_local_path(root: &Url, target: &Url, out_dir: &Path, ext_hint: Option<&str>) -> PathBuf {
+pub fn url_to_local_path(
+    root: &Url,
+    target: &Url,
+    out_dir: &Path,
+    ext_hint: Option<&str>,
+) -> PathBuf {
     if target.origin() != root.origin() {
         // External: keep hostname as subfolder
         let host = target.host_str().unwrap_or("unknown");

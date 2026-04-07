@@ -18,6 +18,22 @@ pub struct CrawlOptions {
     pub placeholder: String,
 }
 
+struct PageParams {
+    start_url: String,
+    url: Url,
+    depth: u32,
+    out_dir: std::path::PathBuf,
+    allow_external_assets: bool,
+    placeholder: String,
+    max_depth: u32,
+}
+
+fn strip_fragment(url: &Url) -> String {
+    let mut url = url.clone();
+    url.set_fragment(None);
+    url.to_string()
+}
+
 /// Main crawl function.
 /// Recursively crawls a website, downloading HTML and assets.
 pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Result<()> {
@@ -41,27 +57,30 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
     let mut seen = HashSet::new();
 
     while !to_visit.is_empty() {
-        let batch: Vec<(Url, u32)> = to_visit.drain(..).collect();
+        let batch = std::mem::take(&mut to_visit);
         let mut handles = Vec::new();
 
         for (url, depth) in batch {
-            let key = url.to_string().split('#').next().unwrap_or("").to_string();
+            let key = strip_fragment(&url);
             if seen.contains(&key) {
                 continue;
             }
             seen.insert(key);
 
-            let root = root.clone();
-            let start_url = start_url.to_string();
-            let out_dir = out_dir.to_path_buf();
             let sem = semaphore.clone();
-            let placeholder = options.placeholder.clone();
-            let allow_ext = options.allow_external_assets;
-            let max_depth = options.max_depth;
+            let params = PageParams {
+                start_url: start_url.to_string(),
+                url,
+                depth,
+                out_dir: out_dir.to_path_buf(),
+                allow_external_assets: options.allow_external_assets,
+                placeholder: options.placeholder.clone(),
+                max_depth: options.max_depth,
+            };
 
             handles.push(tokio::spawn(async move {
                 let _permit = sem.acquire().await.unwrap();
-                process_page(&root, &start_url, &url, depth, &out_dir, allow_ext, &placeholder, max_depth).await
+                process_page(params).await
             }));
         }
 
@@ -69,7 +88,7 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
             match handle.await {
                 Ok(Ok(new_links)) => {
                     for link in new_links {
-                        let lk = link.0.to_string().split('#').next().unwrap_or("").to_string();
+                        let lk = strip_fragment(&link.0);
                         if !seen.contains(&lk) {
                             to_visit.push(link);
                         }
@@ -84,17 +103,8 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
     Ok(())
 }
 
-async fn process_page(
-    _root: &Url,
-    start_url: &str,
-    url: &Url,
-    depth: u32,
-    out_dir: &Path,
-    allow_external_assets: bool,
-    placeholder: &str,
-    max_depth: u32,
-) -> Result<Vec<(Url, u32)>> {
-    let key = url.to_string().split('#').next().unwrap_or("").to_string();
+async fn process_page(params: PageParams) -> Result<Vec<(Url, u32)>> {
+    let key = strip_fragment(&params.url);
 
     let resp = fetch_with_retry(&key, 3, 400).await?;
     let ct = resp
@@ -107,28 +117,29 @@ async fn process_page(
     }
     let html = resp.text().await?;
 
-    let start = Url::parse(start_url)?;
+    let start = Url::parse(&params.start_url)?;
     let opts = RewriteOptions {
-        allow_external_assets,
-        placeholder: placeholder.to_string(),
+        allow_external_assets: params.allow_external_assets,
+        placeholder: params.placeholder,
     };
 
-    let out_file = rewrite_and_save_html(&start, url, &html, out_dir, &opts).await?;
+    let out_file =
+        rewrite_and_save_html(&start, &params.url, &html, &params.out_dir, &opts).await?;
 
     // Extract further links
     let mut new_links = Vec::new();
-    if depth < max_depth {
-        let links = extract_links(&html, &start, url);
+    if params.depth < params.max_depth {
+        let links = extract_links(&html, &start, &params.url);
         for link in links {
-            new_links.push((link, depth + 1));
+            new_links.push((link, params.depth + 1));
         }
     }
 
     let rel_path = out_file
-        .strip_prefix(out_dir)
+        .strip_prefix(&params.out_dir)
         .unwrap_or(&out_file)
         .to_string_lossy();
-    println!("Saved: {} -> {}", url, rel_path);
+    println!("Saved: {} -> {}", params.url, rel_path);
 
     Ok(new_links)
 }

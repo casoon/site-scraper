@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::RwLock;
 use std::time::Duration;
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use rand::Rng;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Response};
@@ -61,7 +61,10 @@ fn bot_headers(user_agent: &str) -> HeaderMap {
     let h = |s: &str| HeaderValue::from_str(s).unwrap();
 
     headers.insert("user-agent", h(user_agent));
-    headers.insert("accept", h("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
+    headers.insert(
+        "accept",
+        h("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
+    );
     headers.insert("accept-language", h("en-US,en;q=0.9"));
     headers.insert("accept-encoding", h("gzip, deflate, br"));
 
@@ -97,7 +100,11 @@ pub fn configure_requests(opts: ConfigureOptions) {
 
     let mut delay_ms = existing.as_ref().map(|c| c.delay_ms).unwrap_or(0);
     let bot_mode = opts.bot_mode;
-    let default_ua = if bot_mode { BOT_USER_AGENT } else { BROWSER_USER_AGENT };
+    let default_ua = if bot_mode {
+        BOT_USER_AGENT
+    } else {
+        BROWSER_USER_AGENT
+    };
     let has_custom_ua = opts.user_agent.is_some();
     let mut user_agent = opts
         .user_agent
@@ -125,7 +132,12 @@ pub fn configure_requests(opts: ConfigureOptions) {
 }
 
 fn get_delay_ms() -> u64 {
-    CONFIG.read().unwrap().as_ref().map(|c| c.delay_ms).unwrap_or(0)
+    CONFIG
+        .read()
+        .unwrap()
+        .as_ref()
+        .map(|c| c.delay_ms)
+        .unwrap_or(0)
 }
 
 fn get_client() -> Client {

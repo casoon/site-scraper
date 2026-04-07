@@ -13,7 +13,13 @@ pub async fn ensure_dir(dir: &Path) -> Result<()> {
 pub fn safe_filename(s: &str) -> String {
     let replaced: String = s
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     // Collapse multiple underscores
     let mut result = String::new();

@@ -34,7 +34,9 @@ pub async fn rewrite_and_save_html(
     let (css_urls, js_urls, img_urls, link_replacements) = {
         let document = Html::parse_document(html);
 
-        let link_sel = Selector::parse("link[rel='stylesheet'][href], link[rel=\"stylesheet\"][href]").unwrap();
+        let link_sel =
+            Selector::parse("link[rel='stylesheet'][href], link[rel=\"stylesheet\"][href]")
+                .unwrap();
         let mut css_urls: Vec<(String, Url)> = Vec::new();
         for el in document.select(&link_sel) {
             if let Some(href) = el.value().attr("href") {
@@ -174,14 +176,17 @@ pub async fn rewrite_and_save_html(
         html,
         RewriteStrSettings {
             element_content_handlers: vec![
-                element!("link[rel='stylesheet'][href], link[rel=\"stylesheet\"][href]", |el| {
-                    if let Some(href) = el.get_attribute("href") {
-                        if let Some(new_href) = replacements_css.get(&href) {
-                            el.set_attribute("href", new_href)?;
+                element!(
+                    "link[rel='stylesheet'][href], link[rel=\"stylesheet\"][href]",
+                    |el| {
+                        if let Some(href) = el.get_attribute("href") {
+                            if let Some(new_href) = replacements_css.get(&href) {
+                                el.set_attribute("href", new_href)?;
+                            }
                         }
+                        Ok(())
                     }
-                    Ok(())
-                }),
+                ),
                 element!("script[src]", |el| {
                     if let Some(src) = el.get_attribute("src") {
                         if let Some(new_src) = replacements_js.get(&src) {
