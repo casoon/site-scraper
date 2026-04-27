@@ -143,7 +143,9 @@ pub async fn rewrite_and_save_html(
         let orig = orig_src.clone();
         img_handles.push(tokio::spawn(async move {
             let ph = get_placeholder_for_image(&url, &placeholder, &out_dir, &root).await;
-            let src = if placeholder == "local" && !ph.src.starts_with("http") {
+            let src = if (placeholder == "local" || placeholder == "real")
+                && !ph.src.starts_with("http")
+            {
                 make_relative(&page_path, Path::new(&ph.src))
             } else {
                 ph.src

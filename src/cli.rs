@@ -30,7 +30,7 @@ struct Args {
     #[arg(long, default_value_t = 300)]
     delay_ms: u64,
 
-    /// Image placeholder strategy: "external" or "local"
+    /// Image placeholder strategy: "real" (download originals), "local" (gray PNG), or "external" (placehold.co)
     #[arg(long, default_value = "external")]
     placeholder: String,
 
