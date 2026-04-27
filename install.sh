@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO="casoon/site-scraper"
 BINARY="site-scraper"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
 # Detect OS and architecture
 OS="$(uname -s)"
@@ -45,6 +45,7 @@ echo "Extracting..."
 tar -xzf "${TMP_DIR}/${ASSET_NAME}" -C "$TMP_DIR"
 
 echo "Installing to ${INSTALL_DIR}/${BINARY}..."
+mkdir -p "$INSTALL_DIR"
 if [ -w "$INSTALL_DIR" ]; then
     mv "${TMP_DIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
 else
@@ -53,3 +54,12 @@ fi
 chmod +x "${INSTALL_DIR}/${BINARY}"
 
 echo "Done! ${BINARY} ${TAG} installed to ${INSTALL_DIR}/${BINARY}"
+
+# Remind user to add INSTALL_DIR to PATH if it's not already there
+if [[ ":$PATH:" != *":${INSTALL_DIR}:"* ]]; then
+    echo ""
+    echo "Note: ${INSTALL_DIR} is not in your PATH."
+    echo "Add the following line to your shell profile (~/.zshrc or ~/.bashrc):"
+    echo ""
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+fi
