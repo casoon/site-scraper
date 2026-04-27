@@ -36,16 +36,36 @@ pub fn url_to_local_path(
     } else {
         // Same-origin
         let mut p = target.path().to_string();
+        let query_slug = target.query().map(query_to_slug);
+
         if p.ends_with('/') {
-            p.push_str("index.html");
+            match query_slug {
+                Some(q) => { p.push_str(&q); p.push_str(".html"); }
+                None    => p.push_str("index.html"),
+            }
         } else if !has_extension(&p) {
+            if let Some(q) = query_slug {
+                p.push('-');
+                p.push_str(&q);
+            }
             p.push_str(".html");
         }
-        let clean = p.split('?').next().unwrap_or(&p);
-        let clean = clean.split('#').next().unwrap_or(clean);
-        let clean = clean.trim_start_matches('/');
+        let clean = p.trim_start_matches('/');
         out_dir.join(clean)
     }
+}
+
+/// Turn a query string into a safe filename segment.
+/// `page_id=32&foo=bar` → `page_id-32-foo-bar`
+fn query_to_slug(query: &str) -> String {
+    query
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .collect::<String>()
+        .split('-')
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 /// Create a relative path from one file to another.
