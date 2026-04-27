@@ -77,10 +77,10 @@ pub async fn run_cli() -> Result<()> {
     ensure_dir(&base_output).await?;
     let out_dir = base_output.join(&host_dir);
 
-    let placeholder = if args.placeholder == "local" {
-        "local".to_string()
-    } else {
-        "external".to_string()
+    let placeholder = match args.placeholder.as_str() {
+        "real" => "real".to_string(),
+        "local" => "local".to_string(),
+        _ => "external".to_string(),
     };
 
     // Remove and recreate output directory
