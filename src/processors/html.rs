@@ -31,7 +31,7 @@ pub async fn rewrite_and_save_html(
     let page_path = url_to_local_path(root, page_url, out_dir, None);
 
     // Pass 1: Parse HTML and collect all URLs (synchronous, non-Send Html stays in this block)
-    let (css_urls, js_urls, img_urls, link_replacements) = {
+    let (css_urls, js_urls, img_urls, img_datasrc_urls, link_replacements) = {
         let document = Html::parse_document(html);
 
         let link_sel =
@@ -68,8 +68,31 @@ pub async fn rewrite_and_save_html(
         let mut img_urls: Vec<(String, Url)> = Vec::new();
         for el in document.select(&img_sel) {
             if let Some(src) = el.value().attr("src") {
+                // Skip data URIs — the real image will be in data-src
+                if src.starts_with("data:") {
+                    continue;
+                }
                 if let Ok(url) = page_url.join(src) {
                     img_urls.push((src.to_string(), url));
+                }
+            }
+        }
+
+        // Collect lazy-loaded images (WordPress, etc. store real URL in data-src / data-lazy-src)
+        let datasrc_sel =
+            Selector::parse("img[data-src], img[data-lazy-src]").unwrap();
+        let mut img_datasrc_urls: Vec<(String, Url)> = Vec::new();
+        for el in document.select(&datasrc_sel) {
+            let attr_val = el
+                .value()
+                .attr("data-src")
+                .or_else(|| el.value().attr("data-lazy-src"));
+            if let Some(src) = attr_val {
+                if src.starts_with("data:") {
+                    continue;
+                }
+                if let Ok(url) = page_url.join(src) {
+                    img_datasrc_urls.push((src.to_string(), url));
                 }
             }
         }
@@ -89,12 +112,13 @@ pub async fn rewrite_and_save_html(
             }
         }
 
-        (css_urls, js_urls, img_urls, link_replacements)
+        (css_urls, js_urls, img_urls, img_datasrc_urls, link_replacements)
     }; // document is dropped here — before any .await
 
     // Process all assets concurrently
     let mut replacements: HashMap<String, String> = HashMap::new();
     let mut img_replacements: HashMap<String, (String, u32, u32)> = HashMap::new();
+    let mut img_datasrc_replacements: HashMap<String, (String, u32, u32)> = HashMap::new();
 
     let mut handles: Vec<tokio::task::JoinHandle<(String, String)>> = Vec::new();
 
@@ -133,7 +157,7 @@ pub async fn rewrite_and_save_html(
         }));
     }
 
-    // Process images
+    // Process img[src] images
     let mut img_handles: Vec<tokio::task::JoinHandle<(String, String, u32, u32)>> = Vec::new();
     for (orig_src, url) in img_urls {
         let root = root.clone();
@@ -142,6 +166,28 @@ pub async fn rewrite_and_save_html(
         let placeholder = opts.placeholder.clone();
         let orig = orig_src.clone();
         img_handles.push(tokio::spawn(async move {
+            let ph = get_placeholder_for_image(&url, &placeholder, &out_dir, &root).await;
+            let src = if (placeholder == "local" || placeholder == "real")
+                && !ph.src.starts_with("http")
+            {
+                make_relative(&page_path, Path::new(&ph.src))
+            } else {
+                ph.src
+            };
+            (orig, src, ph.width, ph.height)
+        }));
+    }
+
+    // Process lazy-loaded images (data-src / data-lazy-src)
+    let mut datasrc_handles: Vec<tokio::task::JoinHandle<(String, String, u32, u32)>> =
+        Vec::new();
+    for (orig_src, url) in img_datasrc_urls {
+        let root = root.clone();
+        let out_dir = out_dir.to_path_buf();
+        let page_path = page_path.clone();
+        let placeholder = opts.placeholder.clone();
+        let orig = orig_src.clone();
+        datasrc_handles.push(tokio::spawn(async move {
             let ph = get_placeholder_for_image(&url, &placeholder, &out_dir, &root).await;
             let src = if (placeholder == "local" || placeholder == "real")
                 && !ph.src.starts_with("http")
@@ -167,11 +213,17 @@ pub async fn rewrite_and_save_html(
             img_replacements.insert(orig, (src, w, h));
         }
     }
+    for handle in datasrc_handles {
+        if let Ok((orig, src, w, h)) = handle.await {
+            img_datasrc_replacements.insert(orig, (src, w, h));
+        }
+    }
 
     // Pass 2: Rewrite HTML using lol_html
     let replacements_css = replacements.clone();
     let replacements_js = replacements.clone();
     let img_repls = img_replacements.clone();
+    let img_datasrc_repls = img_datasrc_replacements.clone();
     let link_repls = link_replacements.clone();
 
     let output = rewrite_str(
@@ -197,7 +249,28 @@ pub async fn rewrite_and_save_html(
                     }
                     Ok(())
                 }),
-                element!("img[src]", |el| {
+                element!("img", |el| {
+                    // Lazy-loaded images: promote data-src → src
+                    let datasrc = el
+                        .get_attribute("data-src")
+                        .or_else(|| el.get_attribute("data-lazy-src"));
+                    if let Some(dsrc) = datasrc {
+                        if let Some((new_src, w, h)) = img_datasrc_repls.get(&dsrc) {
+                            el.set_attribute("src", new_src)?;
+                            el.remove_attribute("data-src");
+                            el.remove_attribute("data-lazy-src");
+                            el.remove_attribute("data-srcset");
+                            if el.get_attribute("width").is_none() {
+                                el.set_attribute("width", &w.to_string())?;
+                            }
+                            if el.get_attribute("height").is_none() {
+                                el.set_attribute("height", &h.to_string())?;
+                            }
+                            el.remove_attribute("srcset");
+                            return Ok(());
+                        }
+                    }
+                    // Regular src images
                     if let Some(src) = el.get_attribute("src") {
                         if let Some((new_src, w, h)) = img_repls.get(&src) {
                             el.set_attribute("src", new_src)?;
