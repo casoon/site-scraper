@@ -54,13 +54,16 @@ site-scraper https://www.example.com --bot
 # Deeper crawl with local image placeholders
 site-scraper https://www.example.com --max-depth 3 --placeholder local
 
+# Download original images
+site-scraper https://www.example.com --placeholder real
+
 # Faster crawl with more concurrency and less delay
 site-scraper https://www.example.com --concurrency 8 --delay-ms 100
 ```
 
 ### Output
 
-All results are saved to `./output/<domain>/`. The folder is recreated on each run. HTML files are stored in a directory structure matching the URL paths. CSS, JS and fonts are downloaded and all references are rewritten to local relative paths. Images are replaced with placeholders.
+All results are saved to `./output/<domain>/`. The folder is recreated on each run. HTML files are stored in a directory structure matching the URL paths. CSS, JS and fonts are downloaded and all references are rewritten to local relative paths. Images are either downloaded as originals or replaced with placeholders, depending on the `--placeholder` option.
 
 ### Options
 
@@ -69,7 +72,7 @@ All results are saved to `./output/<domain>/`. The folder is recreated on each r
 | `--max-depth` | `2` | Maximum crawl depth relative to the start page |
 | `--concurrency` | `4` | Number of parallel downloads |
 | `--delay-ms` | `300` | Delay between requests in milliseconds |
-| `--placeholder` | `external` | Image placeholder strategy: `external` (placehold.co) or `local` (generated PNG) |
+| `--placeholder` | `external` | Image placeholder strategy: `real` (download originals), `local` (generated PNG), or `external` (placehold.co) |
 | `--sitemap` | `true` | Include sitemap.xml URLs as seeds |
 | `--allow-external-assets` | `true` | Download external CSS/JS or leave as-is |
 | `--bot` | `false` | Identify as crawler instead of simulating a browser |
