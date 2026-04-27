@@ -34,7 +34,7 @@ pub async fn get_placeholder_for_image(
             };
         }
         return PlaceholderResult {
-            src: format!("https://placehold.co/800x450"),
+            src: "https://placehold.co/800x450".to_string(),
             width: 800,
             height: 450,
         };
