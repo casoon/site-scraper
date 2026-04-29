@@ -88,7 +88,8 @@ pub async fn run_cli() -> Result<()> {
 
     // Resolve the canonical start URL by following any redirects (e.g. www → non-www)
     let canonical = resolve_redirect(&args.url).await;
-    let start_url = Url::parse(&canonical).map_err(|_| anyhow::anyhow!("Invalid URL after redirect"))?;
+    let start_url =
+        Url::parse(&canonical).map_err(|_| anyhow::anyhow!("Invalid URL after redirect"))?;
 
     let host_dir = safe_filename(start_url.host_str().unwrap_or("unknown"));
     if host_dir.is_empty() {

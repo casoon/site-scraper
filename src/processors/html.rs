@@ -79,8 +79,7 @@ pub async fn rewrite_and_save_html(
         }
 
         // Collect lazy-loaded images (WordPress, etc. store real URL in data-src / data-lazy-src)
-        let datasrc_sel =
-            Selector::parse("img[data-src], img[data-lazy-src]").unwrap();
+        let datasrc_sel = Selector::parse("img[data-src], img[data-lazy-src]").unwrap();
         let mut img_datasrc_urls: Vec<(String, Url)> = Vec::new();
         for el in document.select(&datasrc_sel) {
             let attr_val = el
@@ -112,7 +111,13 @@ pub async fn rewrite_and_save_html(
             }
         }
 
-        (css_urls, js_urls, img_urls, img_datasrc_urls, link_replacements)
+        (
+            css_urls,
+            js_urls,
+            img_urls,
+            img_datasrc_urls,
+            link_replacements,
+        )
     }; // document is dropped here — before any .await
 
     // Process all assets concurrently
@@ -179,8 +184,7 @@ pub async fn rewrite_and_save_html(
     }
 
     // Process lazy-loaded images (data-src / data-lazy-src)
-    let mut datasrc_handles: Vec<tokio::task::JoinHandle<(String, String, u32, u32)>> =
-        Vec::new();
+    let mut datasrc_handles: Vec<tokio::task::JoinHandle<(String, String, u32, u32)>> = Vec::new();
     for (orig_src, url) in img_datasrc_urls {
         let root = root.clone();
         let out_dir = out_dir.to_path_buf();

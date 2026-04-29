@@ -40,8 +40,11 @@ pub fn url_to_local_path(
 
         if p.ends_with('/') {
             match query_slug {
-                Some(q) => { p.push_str(&q); p.push_str(".html"); }
-                None    => p.push_str("index.html"),
+                Some(q) => {
+                    p.push_str(&q);
+                    p.push_str(".html");
+                }
+                None => p.push_str("index.html"),
             }
         } else if !has_extension(&p) {
             if let Some(q) = query_slug {
@@ -60,7 +63,13 @@ pub fn url_to_local_path(
 fn query_to_slug(query: &str) -> String {
     query
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect::<String>()
         .split('-')
         .filter(|s| !s.is_empty())
