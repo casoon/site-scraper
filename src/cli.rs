@@ -116,14 +116,14 @@ pub async fn run_cli() -> Result<()> {
 fn prompt_options() -> Result<(u32, String, bool)> {
     let theme = ColorfulTheme::default();
 
-    // --- Crawl-Tiefe ---
+    // --- Crawl depth ---
     let depth_idx = Select::with_theme(&theme)
-        .with_prompt("Crawl-Tiefe")
+        .with_prompt("Crawl depth")
         .items(&[
-            "1 – nur Startseite",
-            "2 – Standard (empfohlen)",
-            "3 – tiefer",
-            "Eigene Zahl eingeben …",
+            "1 – start page only",
+            "2 – standard (recommended)",
+            "3 – deeper",
+            "Enter a custom number …",
         ])
         .default(1)
         .interact()?;
@@ -133,18 +133,18 @@ fn prompt_options() -> Result<(u32, String, bool)> {
         1 => 2,
         2 => 3,
         _ => Input::with_theme(&theme)
-            .with_prompt("Tiefe")
+            .with_prompt("Depth")
             .default(2u32)
             .interact_text()?,
     };
 
-    // --- Bilder ---
+    // --- Images ---
     let img_idx = Select::with_theme(&theme)
-        .with_prompt("Bilder")
+        .with_prompt("Images")
         .items(&[
-            "Original herunterladen  (--placeholder real)",
-            "Grauer Platzhalter lokal  (--placeholder local)",
-            "Extern – placehold.co  (--placeholder external)",
+            "Download originals  (--placeholder real)",
+            "Local gray placeholder  (--placeholder local)",
+            "External – placehold.co  (--placeholder external)",
         ])
         .default(0)
         .interact()?;
@@ -156,12 +156,12 @@ fn prompt_options() -> Result<(u32, String, bool)> {
     }
     .to_string();
 
-    // --- Bot-Modus ---
+    // --- Mode ---
     let bot_idx = Select::with_theme(&theme)
-        .with_prompt("Modus")
+        .with_prompt("Mode")
         .items(&[
-            "Browser simulieren  (Standard, umgeht Bot-Sperren)",
-            "Als Bot identifizieren  (--bot)",
+            "Simulate browser  (default, avoids bot detection)",
+            "Identify as bot  (--bot)",
         ])
         .default(0)
         .interact()?;
