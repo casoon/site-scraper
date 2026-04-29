@@ -1,7 +1,9 @@
+use std::io::IsTerminal;
 use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use url::Url;
 
 use crate::crawler::{crawl, CrawlOptions};
@@ -19,8 +21,8 @@ struct Args {
     url: String,
 
     /// Maximum crawl depth relative to the start page
-    #[arg(long, default_value_t = 2)]
-    max_depth: u32,
+    #[arg(long)]
+    max_depth: Option<u32>,
 
     /// Number of parallel downloads
     #[arg(long, default_value_t = 4)]
@@ -31,8 +33,8 @@ struct Args {
     delay_ms: u64,
 
     /// Image placeholder strategy: "real" (download originals), "local" (gray PNG), or "external" (placehold.co)
-    #[arg(long, default_value = "external")]
-    placeholder: String,
+    #[arg(long)]
+    placeholder: Option<String>,
 
     /// Include sitemap.xml URLs as seeds
     #[arg(long, default_value_t = true)]
@@ -44,7 +46,7 @@ struct Args {
 
     /// Identify as bot/crawler instead of simulating a browser
     #[arg(long)]
-    bot: bool,
+    bot: Option<bool>,
 
     /// Custom User-Agent header
     #[arg(long)]
@@ -61,9 +63,25 @@ pub async fn run_cli() -> Result<()> {
 
     let start_url = Url::parse(&args.url).map_err(|_| anyhow::anyhow!("Invalid URL provided"))?;
 
+    // Enter interactive mode when no options were explicitly set and stdin is a terminal
+    let interactive = args.max_depth.is_none()
+        && args.placeholder.is_none()
+        && args.bot.is_none()
+        && std::io::stdin().is_terminal();
+
+    let (max_depth, placeholder, bot) = if interactive {
+        prompt_options()?
+    } else {
+        (
+            args.max_depth.unwrap_or(2),
+            resolve_placeholder(args.placeholder.as_deref()),
+            args.bot.unwrap_or(false),
+        )
+    };
+
     configure_requests(ConfigureOptions {
         delay_ms: Some(args.delay_ms),
-        bot_mode: args.bot,
+        bot_mode: bot,
         user_agent: args.user_agent,
         referer: args.referer,
     });
@@ -77,12 +95,6 @@ pub async fn run_cli() -> Result<()> {
     ensure_dir(&base_output).await?;
     let out_dir = base_output.join(&host_dir);
 
-    let placeholder = match args.placeholder.as_str() {
-        "real" => "real".to_string(),
-        "local" => "local".to_string(),
-        _ => "external".to_string(),
-    };
-
     // Remove and recreate output directory
     let _ = tokio::fs::remove_dir_all(&out_dir).await;
     ensure_dir(&out_dir).await?;
@@ -91,7 +103,7 @@ pub async fn run_cli() -> Result<()> {
         start_url.as_str(),
         &out_dir,
         CrawlOptions {
-            max_depth: args.max_depth,
+            max_depth,
             concurrency: args.concurrency,
             sitemap: args.sitemap,
             allow_external_assets: args.allow_external_assets,
@@ -99,4 +111,70 @@ pub async fn run_cli() -> Result<()> {
         },
     )
     .await
+}
+
+fn prompt_options() -> Result<(u32, String, bool)> {
+    let theme = ColorfulTheme::default();
+
+    // --- Crawl-Tiefe ---
+    let depth_idx = Select::with_theme(&theme)
+        .with_prompt("Crawl-Tiefe")
+        .items(&[
+            "1 – nur Startseite",
+            "2 – Standard (empfohlen)",
+            "3 – tiefer",
+            "Eigene Zahl eingeben …",
+        ])
+        .default(1)
+        .interact()?;
+
+    let max_depth: u32 = match depth_idx {
+        0 => 1,
+        1 => 2,
+        2 => 3,
+        _ => Input::with_theme(&theme)
+            .with_prompt("Tiefe")
+            .default(2u32)
+            .interact_text()?,
+    };
+
+    // --- Bilder ---
+    let img_idx = Select::with_theme(&theme)
+        .with_prompt("Bilder")
+        .items(&[
+            "Original herunterladen  (--placeholder real)",
+            "Grauer Platzhalter lokal  (--placeholder local)",
+            "Extern – placehold.co  (--placeholder external)",
+        ])
+        .default(0)
+        .interact()?;
+
+    let placeholder = match img_idx {
+        0 => "real",
+        1 => "local",
+        _ => "external",
+    }
+    .to_string();
+
+    // --- Bot-Modus ---
+    let bot_idx = Select::with_theme(&theme)
+        .with_prompt("Modus")
+        .items(&[
+            "Browser simulieren  (Standard, umgeht Bot-Sperren)",
+            "Als Bot identifizieren  (--bot)",
+        ])
+        .default(0)
+        .interact()?;
+
+    let bot = bot_idx == 1;
+
+    Ok((max_depth, placeholder, bot))
+}
+
+fn resolve_placeholder(raw: Option<&str>) -> String {
+    match raw {
+        Some("real") => "real".to_string(),
+        Some("local") => "local".to_string(),
+        _ => "external".to_string(),
+    }
 }
