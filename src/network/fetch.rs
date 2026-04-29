@@ -220,6 +220,16 @@ pub async fn fetch_with_retry(url: &str, tries: u32, backoff_ms: u64) -> Result<
     Err(last_err.unwrap_or_else(|| anyhow!("fetch failed")))
 }
 
+/// Follow redirects and return the final URL (e.g. www → non-www).
+/// Falls back to the original URL on error.
+pub async fn resolve_redirect(url: &str) -> String {
+    let client = get_client();
+    match client.get(url).send().await {
+        Ok(resp) => resp.url().to_string(),
+        Err(_) => url.to_string(),
+    }
+}
+
 /// Download binary asset to a local file.
 /// Returns true if successful, false otherwise.
 pub async fn download_binary(url: &str, dest: &Path, silent: bool) -> bool {

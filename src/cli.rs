@@ -7,7 +7,7 @@ use dialoguer::{theme::ColorfulTheme, Input, Select};
 use url::Url;
 
 use crate::crawler::{crawl, CrawlOptions};
-use crate::network::fetch::{configure_requests, ConfigureOptions};
+use crate::network::fetch::{configure_requests, resolve_redirect, ConfigureOptions};
 use crate::utils::filesystem::{ensure_dir, safe_filename};
 
 #[derive(Parser)]
@@ -61,7 +61,7 @@ struct Args {
 pub async fn run_cli() -> Result<()> {
     let args = Args::parse();
 
-    let start_url = Url::parse(&args.url).map_err(|_| anyhow::anyhow!("Invalid URL provided"))?;
+    Url::parse(&args.url).map_err(|_| anyhow::anyhow!("Invalid URL provided"))?;
 
     // Enter interactive mode when no options were explicitly set and stdin is a terminal
     let interactive = args.max_depth.is_none()
@@ -85,6 +85,10 @@ pub async fn run_cli() -> Result<()> {
         user_agent: args.user_agent,
         referer: args.referer,
     });
+
+    // Resolve the canonical start URL by following any redirects (e.g. www → non-www)
+    let canonical = resolve_redirect(&args.url).await;
+    let start_url = Url::parse(&canonical).map_err(|_| anyhow::anyhow!("Invalid URL after redirect"))?;
 
     let host_dir = safe_filename(start_url.host_str().unwrap_or("unknown"));
     if host_dir.is_empty() {
