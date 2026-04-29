@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/casoon/site-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/casoon/site-scraper/actions/workflows/ci.yml)
 
-A fast CLI tool written in Rust that creates static copies of websites. It crawls from a starting URL, saves HTML files along with stylesheets and scripts locally, and replaces images with placeholders.
+A fast CLI tool written in Rust that creates static copies of websites. It crawls from a starting URL, saves HTML files along with stylesheets and scripts locally, and downloads or replaces images. When called with only a URL, it guides you through the most important options interactively.
 
 ## Why?
 
@@ -42,11 +42,28 @@ cargo install --path .
 site-scraper <URL> [OPTIONS]
 ```
 
+### Interactive mode
+
+When only a URL is provided, site-scraper prompts for the three most important settings:
+
+```sh
+site-scraper https://www.example.com
+
+? Crawl depth  › 1 – start page only / 2 – standard / 3 – deeper / Enter a custom number …
+? Images       › Download originals / Local gray placeholder / External – placehold.co
+? Mode         › Simulate browser / Identify as bot
+```
+
+All flags can be passed directly to skip the prompts (useful for scripts and CI).
+
 ### Examples
 
 ```sh
-# Standard crawl (simulates a browser)
+# Interactive mode — prompts for depth, images, and mode
 site-scraper https://www.example.com
+
+# Standard crawl (simulates a browser, no prompts)
+site-scraper https://www.example.com --max-depth 2 --placeholder external
 
 # Identify as bot/crawler
 site-scraper https://www.example.com --bot
@@ -69,13 +86,13 @@ All results are saved to `./output/<domain>/`. The folder is recreated on each r
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--max-depth` | `2` | Maximum crawl depth relative to the start page |
+| `--max-depth` | interactive / `2` | Maximum crawl depth relative to the start page |
 | `--concurrency` | `4` | Number of parallel downloads |
 | `--delay-ms` | `300` | Delay between requests in milliseconds |
-| `--placeholder` | `external` | Image placeholder strategy: `real` (download originals), `local` (generated PNG), or `external` (placehold.co) |
+| `--placeholder` | interactive / `external` | Image strategy: `real` (download originals), `local` (generated PNG), or `external` (placehold.co) |
 | `--sitemap` | `true` | Include sitemap.xml URLs as seeds |
 | `--allow-external-assets` | `true` | Download external CSS/JS or leave as-is |
-| `--bot` | `false` | Identify as crawler instead of simulating a browser |
+| `--bot` | interactive / `false` | Identify as crawler instead of simulating a browser |
 | `--user-agent` | - | Custom User-Agent header (overrides `--bot`) |
 | `--referer` | - | Custom Referer header |
 
