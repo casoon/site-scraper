@@ -84,32 +84,17 @@ pub async fn crawl(
                     "window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' })",
                 )
                 .await;
-            // Wait long enough for canvas animations and CSS transitions to
-            // produce a meaningful first frame before we freeze them.
-            tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
 
-            // Freeze the live DOM into a static-friendly snapshot:
-            //  1. Replace canvas elements with an <img> of their current frame.
-            //  2. Reveal opacity-0+translate-* animation entry states.
+            // Reveal scroll-animation initial states (opacity-0 + translate-*)
+            // so the saved HTML renders correctly as a static file without JS.
+            // Only touch elements that have BOTH opacity-0 AND a translate
+            // class — those are animation entry states. Elements with just
+            // opacity-0 (mobile menus, modals, overlays) are intentionally
+            // hidden and must not be revealed.
             let _ = page
                 .evaluate(
                     r#"(() => {
-                        // Freeze canvas elements as static images.
-                        document.querySelectorAll('canvas').forEach(canvas => {
-                            try {
-                                const dataUrl = canvas.toDataURL('image/png');
-                                const img = document.createElement('img');
-                                img.src = dataUrl;
-                                img.className = canvas.className;
-                                img.style.cssText = canvas.style.cssText;
-                                img.width  = canvas.width;
-                                img.height = canvas.height;
-                                canvas.parentNode.replaceChild(img, canvas);
-                            } catch (_) {}
-                        });
-                        // Reveal scroll-animation initial states.
-                        // Only elements with BOTH opacity-0 AND a translate class
-                        // are animation entry states — not modals/overlays.
                         document.querySelectorAll('.opacity-0').forEach(el => {
                             const hasTranslate = [...el.classList]
                                 .some(c => /^-?translate-[xy]-/.test(c));
