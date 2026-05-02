@@ -77,6 +77,11 @@ pub async fn crawl(
             // animations (common in React/Next.js apps that use opacity-0 as
             // initial state) and wait for them to complete before capturing.
             let _ = page.wait_for_navigation().await;
+            // Wait for React/Next.js useEffect hooks to mount and attach event
+            // listeners (e.g. scroll listeners for sticky headers). The load
+            // event fires before these hooks run, so scrolling immediately
+            // after wait_for_navigation() misses them.
+            tokio::time::sleep(std::time::Duration::from_millis(800)).await;
             // Scroll to bottom: triggers IntersectionObserver animations and
             // scroll-driven style changes (sticky headers, etc.).
             let _ = page
