@@ -77,15 +77,14 @@ pub async fn crawl(
             // animations (common in React/Next.js apps that use opacity-0 as
             // initial state) and wait for them to complete before capturing.
             let _ = page.wait_for_navigation().await;
+            // Scroll to bottom: triggers IntersectionObserver animations and
+            // scroll-driven style changes (sticky headers, etc.).
             let _ = page
                 .evaluate(
                     "window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' })",
                 )
                 .await;
             tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
-            let _ = page
-                .evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
-                .await;
 
             // Reveal scroll-animation initial states (opacity-0 + translate-*)
             // so the saved HTML renders correctly as a static file without JS.
@@ -109,6 +108,9 @@ pub async fn crawl(
                 )
                 .await;
 
+            // Capture HTML while scrolled — preserves scroll-driven class
+            // changes (e.g. header gaining a background). Scroll back to top
+            // only for the screenshot so it shows the page from the beginning.
             let html = match page.content().await {
                 Ok(h) => h,
                 Err(e) => {
@@ -120,6 +122,10 @@ pub async fn crawl(
 
             // Optional screenshot
             if opts.screenshot {
+                let _ = page
+                    .evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
+                    .await;
+                tokio::time::sleep(std::time::Duration::from_millis(300)).await;
                 take_screenshot(&page, &url, &screenshot_dir).await;
             }
 
