@@ -1,6 +1,6 @@
 [package]
 name = "site-scraper"
-version = "1.3.3"
+version = "1.3.4"
 edition = "2021"
 description = "CLI utility to mirror a website (HTML + CSS) into a local folder."
 license = "MIT"
@@ -8,6 +8,9 @@ license = "MIT"
 [[bin]]
 name = "site-scraper"
 path = "src/main.rs"
+
+[features]
+headless = ["dep:chromiumoxide", "dep:futures"]
 
 [dependencies]
 anyhow = "1"
@@ -23,3 +26,5 @@ pathdiff = "0.2"
 imagesize = "0.13"
 image = { version = "0.25", default-features = false, features = ["png"] }
 dialoguer = "0.11"
+chromiumoxide = { version = "0.5", features = ["tokio-runtime"], optional = true }
+futures = { version = "0.3", optional = true }

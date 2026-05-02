@@ -7,6 +7,7 @@ use dialoguer::{theme::ColorfulTheme, Input, Select};
 use url::Url;
 
 use crate::crawler::{crawl, CrawlOptions};
+use crate::headless::{find_chrome, print_install_instructions};
 use crate::network::fetch::{configure_requests, resolve_redirect, ConfigureOptions};
 use crate::utils::filesystem::{ensure_dir, safe_filename};
 
@@ -46,7 +47,15 @@ struct Args {
 
     /// Identify as bot/crawler instead of simulating a browser
     #[arg(long)]
-    bot: Option<bool>,
+    bot: bool,
+
+    /// Use a headless Chrome/Chromium browser to render JavaScript (requires Chrome installed)
+    #[arg(long)]
+    headless: bool,
+
+    /// Save a full-page screenshot for each crawled page (requires --headless)
+    #[arg(long)]
+    screenshot: bool,
 
     /// Custom User-Agent header
     #[arg(long)]
@@ -66,7 +75,8 @@ pub async fn run_cli() -> Result<()> {
     // Enter interactive mode when no options were explicitly set and stdin is a terminal
     let interactive = args.max_depth.is_none()
         && args.placeholder.is_none()
-        && args.bot.is_none()
+        && !args.bot
+        && !args.headless
         && std::io::stdin().is_terminal();
 
     let (max_depth, placeholder, bot) = if interactive {
@@ -75,7 +85,7 @@ pub async fn run_cli() -> Result<()> {
         (
             args.max_depth.unwrap_or(2),
             resolve_placeholder(args.placeholder.as_deref()),
-            args.bot.unwrap_or(false),
+            args.bot,
         )
     };
 
@@ -104,6 +114,17 @@ pub async fn run_cli() -> Result<()> {
     let _ = tokio::fs::remove_dir_all(&out_dir).await;
     ensure_dir(&out_dir).await?;
 
+    if args.headless {
+        return run_headless(
+            start_url.as_str(),
+            &out_dir,
+            max_depth,
+            &placeholder,
+            args.screenshot,
+        )
+        .await;
+    }
+
     crawl(
         start_url.as_str(),
         &out_dir,
@@ -116,6 +137,56 @@ pub async fn run_cli() -> Result<()> {
         },
     )
     .await
+}
+
+async fn run_headless(
+    start_url: &str,
+    out_dir: &std::path::Path,
+    max_depth: u32,
+    placeholder: &str,
+    screenshot: bool,
+) -> Result<()> {
+    let chrome = match find_chrome() {
+        Some(p) => p,
+        None => {
+            print_install_instructions();
+            anyhow::bail!("Chrome or Chromium not found");
+        }
+    };
+
+    println!("Using browser: {}", chrome.display());
+
+    #[cfg(feature = "headless")]
+    {
+        use crate::headless::crawler::{crawl, HeadlessOptions};
+        crawl(
+            start_url,
+            out_dir,
+            &chrome,
+            HeadlessOptions {
+                max_depth,
+                placeholder: placeholder.to_string(),
+                screenshot,
+            },
+        )
+        .await
+    }
+
+    #[cfg(not(feature = "headless"))]
+    {
+        let _ = (
+            start_url,
+            out_dir,
+            max_depth,
+            placeholder,
+            screenshot,
+            chrome,
+        );
+        anyhow::bail!(
+            "Headless mode is not compiled in.\n\
+             Rebuild with:  cargo build --features headless"
+        )
+    }
 }
 
 fn prompt_options() -> Result<(u32, String, bool)> {
