@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 use url::Url;
 
 use crate::crawler::{crawl, CrawlOptions};
@@ -66,6 +66,18 @@ struct Args {
     referer: Option<String>,
 }
 
+struct PromptResult {
+    max_depth: u32,
+    placeholder: String,
+    bot: bool,
+    headless: bool,
+    screenshot: bool,
+    concurrency: usize,
+    delay_ms: u64,
+    sitemap: bool,
+    allow_external_assets: bool,
+}
+
 /// Parse CLI arguments and run the crawler.
 pub async fn run_cli() -> Result<()> {
     let args = Args::parse();
@@ -79,19 +91,25 @@ pub async fn run_cli() -> Result<()> {
         && !args.headless
         && std::io::stdin().is_terminal();
 
-    let (max_depth, placeholder, bot) = if interactive {
+    let opts = if interactive {
         prompt_options()?
     } else {
-        (
-            args.max_depth.unwrap_or(2),
-            resolve_placeholder(args.placeholder.as_deref()),
-            args.bot,
-        )
+        PromptResult {
+            max_depth: args.max_depth.unwrap_or(2),
+            placeholder: resolve_placeholder(args.placeholder.as_deref()),
+            bot: args.bot,
+            headless: args.headless,
+            screenshot: args.screenshot,
+            concurrency: args.concurrency,
+            delay_ms: args.delay_ms,
+            sitemap: args.sitemap,
+            allow_external_assets: args.allow_external_assets,
+        }
     };
 
     configure_requests(ConfigureOptions {
-        delay_ms: Some(args.delay_ms),
-        bot_mode: bot,
+        delay_ms: Some(opts.delay_ms),
+        bot_mode: opts.bot,
         user_agent: args.user_agent,
         referer: args.referer,
     });
@@ -114,13 +132,13 @@ pub async fn run_cli() -> Result<()> {
     let _ = tokio::fs::remove_dir_all(&out_dir).await;
     ensure_dir(&out_dir).await?;
 
-    if args.headless {
+    if opts.headless {
         return run_headless(
             start_url.as_str(),
             &out_dir,
-            max_depth,
-            &placeholder,
-            args.screenshot,
+            opts.max_depth,
+            &opts.placeholder,
+            opts.screenshot,
         )
         .await;
     }
@@ -129,11 +147,11 @@ pub async fn run_cli() -> Result<()> {
         start_url.as_str(),
         &out_dir,
         CrawlOptions {
-            max_depth,
-            concurrency: args.concurrency,
-            sitemap: args.sitemap,
-            allow_external_assets: args.allow_external_assets,
-            placeholder,
+            max_depth: opts.max_depth,
+            concurrency: opts.concurrency,
+            sitemap: opts.sitemap,
+            allow_external_assets: opts.allow_external_assets,
+            placeholder: opts.placeholder,
         },
     )
     .await
@@ -189,8 +207,19 @@ async fn run_headless(
     }
 }
 
-fn prompt_options() -> Result<(u32, String, bool)> {
+fn prompt_options() -> Result<PromptResult> {
     let theme = ColorfulTheme::default();
+
+    // --- Quick vs Extended ---
+    let extended = Select::with_theme(&theme)
+        .with_prompt("Setup")
+        .items(&[
+            "Quick  (depth, images, mode)",
+            "Extended  (+ headless, concurrency, delay, sitemap, assets)",
+        ])
+        .default(0)
+        .interact()?
+        == 1;
 
     // --- Crawl depth ---
     let depth_idx = Select::with_theme(&theme)
@@ -233,18 +262,114 @@ fn prompt_options() -> Result<(u32, String, bool)> {
     .to_string();
 
     // --- Mode ---
-    let bot_idx = Select::with_theme(&theme)
+    let mode_idx = Select::with_theme(&theme)
         .with_prompt("Mode")
         .items(&[
             "Simulate browser  (default, avoids bot detection)",
             "Identify as bot  (--bot)",
+            "Headless Chrome  (--headless, renders JavaScript)",
         ])
         .default(0)
         .interact()?;
 
-    let bot = bot_idx == 1;
+    let bot = mode_idx == 1;
+    let headless = mode_idx == 2;
 
-    Ok((max_depth, placeholder, bot))
+    // --- Screenshot (only when headless is selected) ---
+    let screenshot = if headless {
+        Confirm::with_theme(&theme)
+            .with_prompt("Save full-page screenshots?  (--screenshot)")
+            .default(false)
+            .interact()?
+    } else {
+        false
+    };
+
+    if !extended {
+        return Ok(PromptResult {
+            max_depth,
+            placeholder,
+            bot,
+            headless,
+            screenshot,
+            concurrency: 4,
+            delay_ms: 300,
+            sitemap: true,
+            allow_external_assets: true,
+        });
+    }
+
+    // --- Concurrency ---
+    let conc_idx = Select::with_theme(&theme)
+        .with_prompt("Parallel downloads")
+        .items(&[
+            "1 – sequential",
+            "2",
+            "4  (default)",
+            "8",
+            "Enter a custom number …",
+        ])
+        .default(2)
+        .interact()?;
+
+    let concurrency: usize = match conc_idx {
+        0 => 1,
+        1 => 2,
+        2 => 4,
+        3 => 8,
+        _ => Input::with_theme(&theme)
+            .with_prompt("Concurrency")
+            .default(4usize)
+            .interact_text()?,
+    };
+
+    // --- Delay ---
+    let delay_idx = Select::with_theme(&theme)
+        .with_prompt("Delay between requests")
+        .items(&[
+            "0 ms – no delay",
+            "150 ms",
+            "300 ms  (default)",
+            "500 ms – polite",
+            "Enter a custom value …",
+        ])
+        .default(2)
+        .interact()?;
+
+    let delay_ms: u64 = match delay_idx {
+        0 => 0,
+        1 => 150,
+        2 => 300,
+        3 => 500,
+        _ => Input::with_theme(&theme)
+            .with_prompt("Delay (ms)")
+            .default(300u64)
+            .interact_text()?,
+    };
+
+    // --- Sitemap ---
+    let sitemap = Confirm::with_theme(&theme)
+        .with_prompt("Use sitemap.xml as seed?  (--sitemap)")
+        .default(true)
+        .interact()?;
+
+    // --- External assets ---
+    let allow_external_assets = Confirm::with_theme(&theme)
+        .with_prompt("Download external CSS/JS?  (--allow-external-assets)")
+        .default(true)
+        .interact()?;
+
+    Ok(PromptResult {
+        max_depth,
+        placeholder,
+        bot,
+        headless,
+        screenshot,
+        concurrency,
+        delay_ms,
+        sitemap,
+        allow_external_assets,
+    })
 }
 
 fn resolve_placeholder(raw: Option<&str>) -> String {
