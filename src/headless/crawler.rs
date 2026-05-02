@@ -87,19 +87,23 @@ pub async fn crawl(
                 .evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
                 .await;
 
-            // Remove opacity-0 animation initial states so the saved HTML
-            // renders correctly as a static file without JS.
+            // Reveal scroll-animation initial states (opacity-0 + translate-*)
+            // so the saved HTML renders correctly as a static file without JS.
+            // Only touch elements that have BOTH opacity-0 AND a translate
+            // class — those are animation entry states. Elements with just
+            // opacity-0 (mobile menus, modals, overlays) are intentionally
+            // hidden and must not be revealed.
             let _ = page
                 .evaluate(
                     r#"(() => {
                         document.querySelectorAll('.opacity-0').forEach(el => {
+                            const hasTranslate = [...el.classList]
+                                .some(c => /^-?translate-[xy]-/.test(c));
+                            if (!hasTranslate) return;
                             el.classList.remove('opacity-0');
                             [...el.classList]
                                 .filter(c => /^-?translate-[xy]-/.test(c))
                                 .forEach(c => el.classList.remove(c));
-                        });
-                        document.querySelectorAll('[style]').forEach(el => {
-                            if (el.style.opacity === '0') el.style.opacity = '1';
                         });
                     })()"#,
                 )
