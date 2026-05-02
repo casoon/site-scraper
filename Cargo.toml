@@ -1,6 +1,6 @@
 [package]
 name = "site-scraper"
-version = "1.3.6"
+version = "1.3.7"
 edition = "2021"
 description = "CLI utility to mirror a website (HTML + CSS) into a local folder."
 license = "MIT"

@@ -73,8 +73,19 @@ pub async fn crawl(
                 }
             };
 
-            // Wait for JS to settle
+            // Wait for initial load, then scroll to trigger IntersectionObserver
+            // animations (common in React/Next.js apps that use opacity-0 as
+            // initial state) and wait for them to complete before capturing.
             let _ = page.wait_for_navigation().await;
+            let _ = page
+                .evaluate(
+                    "window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' })",
+                )
+                .await;
+            tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+            let _ = page
+                .evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
+                .await;
 
             let html = match page.content().await {
                 Ok(h) => h,
