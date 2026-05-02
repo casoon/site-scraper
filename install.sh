@@ -39,7 +39,8 @@ TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 echo "Downloading ${DOWNLOAD_URL}..."
-curl -sL "$DOWNLOAD_URL" -o "${TMP_DIR}/${ASSET_NAME}"
+curl -fsSL "$DOWNLOAD_URL" -o "${TMP_DIR}/${ASSET_NAME}" \
+    || { echo "Error: Download failed. Check your internet connection or try again later."; exit 1; }
 
 echo "Extracting..."
 tar -xzf "${TMP_DIR}/${ASSET_NAME}" -C "$TMP_DIR"
