@@ -86,15 +86,16 @@ pub async fn crawl(
                 .await;
             tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
 
-            // Reveal scroll-animation initial states (opacity-0 + translate-*)
-            // so the saved HTML renders correctly as a static file without JS.
-            // Only touch elements that have BOTH opacity-0 AND a translate
-            // class — those are animation entry states. Elements with just
-            // opacity-0 (mobile menus, modals, overlays) are intentionally
-            // hidden and must not be revealed.
+            // Freeze DOM into a static-friendly snapshot:
+            //   1. Remove all <script> tags so the saved HTML does not re-run
+            //      JS when opened locally (Next.js/React hydration would
+            //      reset the rendered state and break the page).
+            //   2. Reveal opacity-0 + translate-* animation entry states so
+            //      elements are visible without JS driving them.
             let _ = page
                 .evaluate(
                     r#"(() => {
+                        document.querySelectorAll('script').forEach(s => s.remove());
                         document.querySelectorAll('.opacity-0').forEach(el => {
                             const hasTranslate = [...el.classList]
                                 .some(c => /^-?translate-[xy]-/.test(c));
