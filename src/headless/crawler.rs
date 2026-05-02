@@ -87,6 +87,24 @@ pub async fn crawl(
                 .evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
                 .await;
 
+            // Remove opacity-0 animation initial states so the saved HTML
+            // renders correctly as a static file without JS.
+            let _ = page
+                .evaluate(
+                    r#"(() => {
+                        document.querySelectorAll('.opacity-0').forEach(el => {
+                            el.classList.remove('opacity-0');
+                            [...el.classList]
+                                .filter(c => /^-?translate-[xy]-/.test(c))
+                                .forEach(c => el.classList.remove(c));
+                        });
+                        document.querySelectorAll('[style]').forEach(el => {
+                            if (el.style.opacity === '0') el.style.opacity = '1';
+                        });
+                    })()"#,
+                )
+                .await;
+
             let html = match page.content().await {
                 Ok(h) => h,
                 Err(e) => {
