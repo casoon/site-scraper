@@ -42,8 +42,9 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
 
     let mut to_visit: Vec<(Url, u32)> = vec![(root.clone(), 0)];
 
-    // Optionally seed from sitemap
-    if options.sitemap {
+    // Optionally seed from sitemap; entries count as linked pages (depth 1),
+    // so skip them when only the start page is requested.
+    if options.sitemap && options.max_depth >= 1 {
         let seeds = discover_from_sitemap(&root).await;
         for s in seeds {
             if let Ok(url) = Url::parse(&s) {

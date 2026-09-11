@@ -52,7 +52,7 @@ site-scraper https://www.example.com
 ? Setup        › Quick (depth, images, mode)
                › Extended (+ headless, concurrency, delay, sitemap, assets)
 
-? Crawl depth  › 1 – start page only / 2 – standard / 3 – deeper / Enter a custom number …
+? Crawl depth  › 0 – start page only / 2 – standard / 3 – deeper / Enter a custom number …
 ? Images       › Download originals / Local gray placeholder / External – placehold.co
 ? Mode         › Simulate browser / Identify as bot / Headless Chrome
 ```

@@ -244,7 +244,7 @@ fn prompt_options() -> Result<PromptResult> {
     let depth_idx = Select::with_theme(&theme)
         .with_prompt("Crawl depth")
         .items(&[
-            "1 – start page only",
+            "0 – start page only",
             "2 – standard (recommended)",
             "3 – deeper",
             "Enter a custom number …",
@@ -253,7 +253,7 @@ fn prompt_options() -> Result<PromptResult> {
         .interact()?;
 
     let max_depth: u32 = match depth_idx {
-        0 => 1,
+        0 => 0,
         1 => 2,
         2 => 3,
         _ => Input::with_theme(&theme)
