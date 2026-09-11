@@ -9,3 +9,6 @@ output/
 
 # Environment
 .env
+
+# Local planning
+plan/
