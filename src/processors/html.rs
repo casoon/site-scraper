@@ -101,10 +101,18 @@ pub async fn rewrite_and_save_html(
         for el in document.select(&a_sel) {
             if let Some(href) = el.value().attr("href") {
                 let href = href.trim();
+                // In-page anchors already work in the saved file
+                if href.starts_with('#') {
+                    continue;
+                }
                 if let Ok(url) = page_url.join(href) {
                     if url.origin() == root.origin() {
                         let target_path = url_to_local_path(root, &url, out_dir, None);
-                        let rel = make_relative(&page_path, &target_path);
+                        let mut rel = make_relative(&page_path, &target_path);
+                        if let Some(fragment) = url.fragment() {
+                            rel.push('#');
+                            rel.push_str(fragment);
+                        }
                         link_replacements.insert(href.to_string(), rel);
                     }
                 }
@@ -311,4 +319,33 @@ pub async fn rewrite_and_save_html(
     tokio::fs::write(&page_path, &output).await?;
 
     Ok(page_path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn rewrites_internal_links_and_keeps_fragments() {
+        let out_dir =
+            std::env::temp_dir().join(format!("site-scraper-html-{}", std::process::id()));
+        let root = Url::parse("https://example.com/").unwrap();
+        let html = r##"<a href="#top">Top</a>
+            <a href="/kontakt#form">Kontakt</a>
+            <a href="/about">About</a>"##;
+        let opts = RewriteOptions {
+            allow_external_assets: false,
+            placeholder: "local".to_string(),
+        };
+
+        let path = rewrite_and_save_html(&root, &root, html, &out_dir, &opts)
+            .await
+            .unwrap();
+        let saved = std::fs::read_to_string(&path).unwrap();
+        std::fs::remove_dir_all(&out_dir).ok();
+
+        assert!(saved.contains(r##"href="#top""##));
+        assert!(saved.contains(r##"href="./kontakt.html#form""##));
+        assert!(saved.contains(r##"href="./about.html""##));
+    }
 }

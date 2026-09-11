@@ -27,12 +27,13 @@ pub fn url_to_local_path(
         } else {
             format!("{}{}", pathname, ext_hint.unwrap_or(""))
         };
-        // Strip query/fragment
-        let clean = with_ext.split('?').next().unwrap_or(&with_ext);
-        let clean = clean.split('#').next().unwrap_or(clean);
+        // Keep the query in the name so `app.js?v=1` and `?v=2` don't collide
+        let with_query = match target.query() {
+            Some(q) => insert_before_extension(&with_ext, &query_to_slug(q)),
+            None => with_ext,
+        };
         // Remove leading slash for joining
-        let clean = clean.trim_start_matches('/');
-        host_dir.join(clean)
+        host_dir.join(with_query.trim_start_matches('/'))
     } else {
         // Same-origin
         let mut p = target.path().to_string();
@@ -52,6 +53,9 @@ pub fn url_to_local_path(
                 p.push_str(&q);
             }
             p.push_str(".html");
+        } else if let Some(q) = query_slug {
+            // Keep the query in the name so `app.js?v=1` and `?v=2` don't collide
+            p = insert_before_extension(&p, &q);
         }
         let clean = p.trim_start_matches('/');
         out_dir.join(clean)
@@ -75,6 +79,22 @@ fn query_to_slug(query: &str) -> String {
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
         .join("-")
+}
+
+/// Insert `-suffix` before the file extension of the last path segment.
+/// `/js/app.js` + `v-1` → `/js/app-v-1.js`
+fn insert_before_extension(path: &str, suffix: &str) -> String {
+    if suffix.is_empty() {
+        return path.to_string();
+    }
+    let name_start = path.rfind('/').map_or(0, |i| i + 1);
+    match path[name_start..].rfind('.') {
+        Some(dot) => {
+            let dot = name_start + dot;
+            format!("{}-{}{}", &path[..dot], suffix, &path[dot..])
+        }
+        None => format!("{}-{}", path, suffix),
+    }
 }
 
 /// Create a relative path from one file to another.
@@ -156,7 +176,47 @@ mod tests {
         let root = u("https://example.com/");
         let target = u("https://cdn.other.com/asset?v=1");
         let path = url_to_local_path(&root, &target, Path::new("out"), Some(".js"));
-        assert_eq!(path, PathBuf::from("out/cdn.other.com/asset.js"));
+        assert_eq!(path, PathBuf::from("out/cdn.other.com/asset-v-1.js"));
+    }
+
+    #[test]
+    fn same_origin_assets_with_different_queries_get_distinct_files() {
+        let root = u("https://example.com/");
+        let out = Path::new("out");
+        let v1 = url_to_local_path(&root, &u("https://example.com/js/app.js?v=1"), out, None);
+        let v2 = url_to_local_path(&root, &u("https://example.com/js/app.js?v=2"), out, None);
+        assert_eq!(v1, PathBuf::from("out/js/app-v-1.js"));
+        assert_eq!(v2, PathBuf::from("out/js/app-v-2.js"));
+    }
+
+    #[test]
+    fn external_assets_with_different_queries_get_distinct_files() {
+        let root = u("https://example.com/");
+        let out = Path::new("out");
+        let v1 = url_to_local_path(
+            &root,
+            &u("https://cdn.other.com/style.css?ver=1"),
+            out,
+            None,
+        );
+        let v2 = url_to_local_path(
+            &root,
+            &u("https://cdn.other.com/style.css?ver=2"),
+            out,
+            None,
+        );
+        assert_ne!(v1, v2);
+        assert_eq!(v1, PathBuf::from("out/cdn.other.com/style-ver-1.css"));
+    }
+
+    #[test]
+    fn insert_before_extension_handles_dirs_and_missing_extension() {
+        assert_eq!(
+            insert_before_extension("/a.b/app.js", "v-1"),
+            "/a.b/app-v-1.js"
+        );
+        assert_eq!(insert_before_extension("/a.b/app", "v-1"), "/a.b/app-v-1");
+        assert_eq!(insert_before_extension("/app.js", ""), "/app.js");
     }
 
     #[test]
