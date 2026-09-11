@@ -55,6 +55,7 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
     }
 
     let mut seen = HashSet::new();
+    let mut failed = 0usize;
 
     while !to_visit.is_empty() {
         let batch = std::mem::take(&mut to_visit);
@@ -68,6 +69,7 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
             seen.insert(key);
 
             let sem = semaphore.clone();
+            let page_url = url.clone();
             let params = PageParams {
                 start_url: start_url.to_string(),
                 url,
@@ -78,13 +80,16 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
                 max_depth: options.max_depth,
             };
 
-            handles.push(tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
-                process_page(params).await
-            }));
+            handles.push((
+                page_url,
+                tokio::spawn(async move {
+                    let _permit = sem.acquire().await.unwrap();
+                    process_page(params).await
+                }),
+            ));
         }
 
-        for handle in handles {
+        for (page_url, handle) in handles {
             match handle.await {
                 Ok(Ok(new_links)) => {
                     for link in new_links {
@@ -94,12 +99,21 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
                         }
                     }
                 }
-                Ok(Err(_)) => {}
-                Err(_) => {}
+                Ok(Err(e)) => {
+                    failed += 1;
+                    eprintln!("Failed: {}: {:#}", page_url, e);
+                }
+                Err(e) => {
+                    failed += 1;
+                    eprintln!("Failed: {}: {}", page_url, e);
+                }
             }
         }
     }
 
+    if failed > 0 {
+        anyhow::bail!("{} of {} pages failed", failed, seen.len());
+    }
     Ok(())
 }
 

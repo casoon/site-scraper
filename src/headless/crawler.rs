@@ -50,6 +50,7 @@ pub async fn crawl(
 
     let mut to_visit: Vec<(Url, u32)> = vec![(root.clone(), 0)];
     let mut seen: HashSet<String> = HashSet::new();
+    let mut failed = 0usize;
 
     while !to_visit.is_empty() {
         let batch = std::mem::take(&mut to_visit);
@@ -65,18 +66,43 @@ pub async fn crawl(
             }
             seen.insert(key);
 
-            let page = match browser.new_page(url.as_str()).await {
+            let page = match browser.new_page("about:blank").await {
                 Ok(p) => p,
                 Err(e) => {
-                    eprintln!("Skipping {}: {}", url, e);
+                    failed += 1;
+                    eprintln!("Failed: {}: {}", url, e);
                     continue;
                 }
             };
 
-            // Wait for initial load, then scroll to trigger IntersectionObserver
-            // animations (common in React/Next.js apps that use opacity-0 as
-            // initial state) and wait for them to complete before capturing.
-            let _ = page.wait_for_navigation().await;
+            // Navigate via goto() instead of new_page(url): Chrome renders its
+            // own error page for failed navigations, and only goto() reports
+            // network errors. HTTP error status is read from the Navigation
+            // Timing API because chromiumoxide's navigation response is not
+            // reliable. Waiting for navigation also waits for the initial load;
+            // after it we scroll to trigger IntersectionObserver animations
+            // (common in React/Next.js apps that use opacity-0 as initial state).
+            let nav_err = match page.goto(url.as_str()).await {
+                Err(e) => Some(e.to_string()),
+                Ok(_) => {
+                    let _ = page.wait_for_navigation().await;
+                    let status = page
+                        .evaluate(
+                            "performance.getEntriesByType('navigation')[0]?.responseStatus ?? 0",
+                        )
+                        .await
+                        .ok()
+                        .and_then(|r| r.into_value::<u16>().ok())
+                        .unwrap_or(0);
+                    (status >= 400).then(|| format!("HTTP {}", status))
+                }
+            };
+            if let Some(err) = nav_err {
+                failed += 1;
+                eprintln!("Failed: {}: {}", url, err);
+                let _ = page.close().await;
+                continue;
+            }
             // Wait for React/Next.js useEffect hooks to mount and attach event
             // listeners (e.g. scroll listeners for sticky headers). The load
             // event fires before these hooks run, so scrolling immediately
@@ -120,7 +146,8 @@ pub async fn crawl(
             let html = match page.content().await {
                 Ok(h) => h,
                 Err(e) => {
-                    eprintln!("Failed to get content of {}: {}", url, e);
+                    failed += 1;
+                    eprintln!("Failed: {}: {}", url, e);
                     let _ = page.close().await;
                     continue;
                 }
@@ -148,7 +175,10 @@ pub async fn crawl(
                     let rel = out_file.strip_prefix(out_dir).unwrap_or(&out_file);
                     println!("Saved: {} -> {}", url, rel.display());
                 }
-                Err(e) => eprintln!("Failed to save {}: {}", url, e),
+                Err(e) => {
+                    failed += 1;
+                    eprintln!("Failed: {}: {:#}", url, e);
+                }
             }
 
             // Follow links up to max_depth
@@ -165,6 +195,9 @@ pub async fn crawl(
     }
 
     let _ = browser.close().await;
+    if failed > 0 {
+        anyhow::bail!("{} of {} pages failed", failed, seen.len());
+    }
     Ok(())
 }
 
