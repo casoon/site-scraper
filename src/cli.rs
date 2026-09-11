@@ -90,6 +90,8 @@ struct PromptResult {
     placeholder: String,
     bot: bool,
     headless: bool,
+    // Only read by the headless crawler.
+    #[cfg_attr(not(feature = "headless"), allow(dead_code))]
     screenshot: bool,
     concurrency: usize,
     delay_ms: u64,
@@ -152,14 +154,7 @@ pub async fn run_cli() -> Result<()> {
     ensure_dir(&out_dir).await?;
 
     if opts.headless {
-        return run_headless(
-            start_url.as_str(),
-            &out_dir,
-            opts.max_depth,
-            &opts.placeholder,
-            opts.screenshot,
-        )
-        .await;
+        return run_headless(start_url.as_str(), &out_dir, opts).await;
     }
 
     crawl(
@@ -179,9 +174,7 @@ pub async fn run_cli() -> Result<()> {
 async fn run_headless(
     start_url: &str,
     out_dir: &std::path::Path,
-    max_depth: u32,
-    placeholder: &str,
-    screenshot: bool,
+    opts: PromptResult,
 ) -> Result<()> {
     let chrome = match find_chrome() {
         Some(p) => p,
@@ -201,9 +194,12 @@ async fn run_headless(
             out_dir,
             &chrome,
             HeadlessOptions {
-                max_depth,
-                placeholder: placeholder.to_string(),
-                screenshot,
+                max_depth: opts.max_depth,
+                concurrency: opts.concurrency,
+                sitemap: opts.sitemap,
+                allow_external_assets: opts.allow_external_assets,
+                placeholder: opts.placeholder,
+                screenshot: opts.screenshot,
             },
         )
         .await
@@ -211,14 +207,7 @@ async fn run_headless(
 
     #[cfg(not(feature = "headless"))]
     {
-        let _ = (
-            start_url,
-            out_dir,
-            max_depth,
-            placeholder,
-            screenshot,
-            chrome,
-        );
+        let _ = (start_url, out_dir, opts, chrome);
         anyhow::bail!(
             "Headless mode is not compiled in.\n\
              Rebuild with:  cargo build --features headless"
