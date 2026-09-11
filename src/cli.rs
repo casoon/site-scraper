@@ -112,7 +112,7 @@ pub async fn run_cli() -> Result<()> {
         bot_mode: opts.bot,
         user_agent: args.user_agent,
         referer: args.referer,
-    });
+    })?;
 
     // Resolve the canonical start URL by following any redirects (e.g. www → non-www)
     let canonical = resolve_redirect(&args.url).await;

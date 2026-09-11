@@ -94,7 +94,14 @@ pub struct ConfigureOptions {
 }
 
 /// Configure request settings.
-pub fn configure_requests(opts: ConfigureOptions) {
+pub fn configure_requests(opts: ConfigureOptions) -> Result<()> {
+    if let Some(ref ua) = opts.user_agent {
+        HeaderValue::from_str(ua).map_err(|_| anyhow!("Invalid characters in --user-agent"))?;
+    }
+    if let Some(ref r) = opts.referer {
+        HeaderValue::from_str(r).map_err(|_| anyhow!("Invalid characters in --referer"))?;
+    }
+
     let mut lock = CONFIG.write().unwrap();
     let existing = lock.take();
 
@@ -129,6 +136,7 @@ pub fn configure_requests(opts: ConfigureOptions) {
         referer,
         client,
     });
+    Ok(())
 }
 
 fn get_delay_ms() -> u64 {
