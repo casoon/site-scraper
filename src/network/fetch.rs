@@ -24,6 +24,24 @@ struct RequestConfig {
 
 static CONFIG: RwLock<Option<RequestConfig>> = RwLock::new(None);
 
+/// A page or asset answered with a non-success HTTP status.
+#[derive(Debug)]
+pub struct HttpStatusError(pub u16);
+
+impl std::fmt::Display for HttpStatusError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "HTTP {}", self.0)
+    }
+}
+
+impl std::error::Error for HttpStatusError {}
+
+/// Whether the error is an HTTP 404 response.
+pub fn is_not_found(err: &anyhow::Error) -> bool {
+    err.downcast_ref::<HttpStatusError>()
+        .is_some_and(|e| e.0 == 404)
+}
+
 fn browser_headers(user_agent: &str) -> HeaderMap {
     let mut headers = HeaderMap::new();
     let h = |s: &str| HeaderValue::from_str(s).unwrap();
@@ -209,7 +227,7 @@ pub async fn fetch_with_retry(url: &str, tries: u32, backoff_ms: u64) -> Result<
         match client.get(url).headers(headers.clone()).send().await {
             Ok(resp) => {
                 if !resp.status().is_success() {
-                    last_err = Some(anyhow!("HTTP {}", resp.status().as_u16()));
+                    last_err = Some(HttpStatusError(resp.status().as_u16()).into());
                     if i < tries - 1 {
                         tokio::time::sleep(Duration::from_millis(backoff_ms * 2u64.pow(i))).await;
                     }
@@ -260,5 +278,17 @@ pub async fn download_binary(url: &str, dest: &Path, silent: bool) -> bool {
             }
             false
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_not_found_matches_only_http_404() {
+        assert!(is_not_found(&HttpStatusError(404).into()));
+        assert!(!is_not_found(&HttpStatusError(500).into()));
+        assert!(!is_not_found(&anyhow!("HTTP 404")));
     }
 }

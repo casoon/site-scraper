@@ -5,7 +5,7 @@ use anyhow::Result;
 use tokio::sync::Semaphore;
 use url::Url;
 
-use crate::network::fetch::fetch_with_retry;
+use crate::network::fetch::{fetch_with_retry, is_not_found};
 use crate::parsers::links::extract_links;
 use crate::parsers::sitemap::discover_from_sitemap;
 use crate::processors::html::{rewrite_and_save_html, RewriteOptions};
@@ -41,6 +41,7 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
     let semaphore = std::sync::Arc::new(Semaphore::new(options.concurrency));
 
     let mut to_visit: Vec<(Url, u32)> = vec![(root.clone(), 0)];
+    let mut sitemap_urls = HashSet::new();
 
     // Optionally seed from sitemap; entries count as linked pages (depth 1),
     // so skip them when only the start page is requested.
@@ -49,6 +50,7 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
         for s in seeds {
             if let Ok(url) = Url::parse(&s) {
                 if url.origin() == root.origin() {
+                    sitemap_urls.insert(strip_fragment(&url));
                     to_visit.push((url, 1));
                 }
             }
@@ -99,6 +101,12 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
                             to_visit.push(link);
                         }
                     }
+                }
+                // Stale sitemap entries are common; don't fail the crawl for them.
+                Ok(Err(e))
+                    if is_not_found(&e) && sitemap_urls.contains(&strip_fragment(&page_url)) =>
+                {
+                    eprintln!("Warning: {}: {:#} (listed in sitemap)", page_url, e);
                 }
                 Ok(Err(e)) => {
                     failed += 1;

@@ -9,6 +9,7 @@ use futures::StreamExt;
 use tokio::sync::Semaphore;
 use url::Url;
 
+use crate::network::fetch::{is_not_found, HttpStatusError};
 use crate::parsers::links::extract_links;
 use crate::parsers::sitemap::discover_from_sitemap;
 use crate::processors::html::{rewrite_and_save_html, RewriteOptions};
@@ -88,6 +89,7 @@ pub async fn crawl(
     let semaphore = Arc::new(Semaphore::new(opts.concurrency));
 
     let mut to_visit: Vec<(Url, u32)> = vec![(root.clone(), 0)];
+    let mut sitemap_urls = HashSet::new();
 
     // Optionally seed from sitemap; entries count as linked pages (depth 1),
     // so skip them when only the start page is requested.
@@ -95,6 +97,7 @@ pub async fn crawl(
         for s in discover_from_sitemap(&root).await {
             if let Ok(url) = Url::parse(&s) {
                 if url.origin() == root.origin() {
+                    sitemap_urls.insert(strip_fragment(&url));
                     to_visit.push((url, 1));
                 }
             }
@@ -136,6 +139,12 @@ pub async fn crawl(
                             to_visit.push(link);
                         }
                     }
+                }
+                // Stale sitemap entries are common; don't fail the crawl for them.
+                Ok(Err(e))
+                    if is_not_found(&e) && sitemap_urls.contains(&strip_fragment(&page_url)) =>
+                {
+                    eprintln!("Warning: {}: {:#} (listed in sitemap)", page_url, e);
                 }
                 Ok(Err(e)) => {
                     failed += 1;
@@ -213,7 +222,7 @@ async fn capture_page(page: &Page, url: &Url, screenshot_dir: Option<&Path>) -> 
         .and_then(|r| r.into_value::<u16>().ok())
         .unwrap_or(0);
     if status >= 400 {
-        anyhow::bail!("HTTP {}", status);
+        return Err(HttpStatusError(status).into());
     }
 
     // Wait for React/Next.js useEffect hooks to mount and attach event
