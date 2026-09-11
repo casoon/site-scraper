@@ -102,3 +102,88 @@ fn has_extension(path: &str) -> bool {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn u(s: &str) -> Url {
+        Url::parse(s).unwrap()
+    }
+
+    #[test]
+    fn same_origin_directory_path_gets_index_html() {
+        let root = u("https://example.com/");
+        let target = u("https://example.com/blog/");
+        let path = url_to_local_path(&root, &target, Path::new("out"), None);
+        assert_eq!(path, PathBuf::from("out/blog/index.html"));
+    }
+
+    #[test]
+    fn same_origin_path_without_extension_gets_html_suffix() {
+        let root = u("https://example.com/");
+        let target = u("https://example.com/about");
+        let path = url_to_local_path(&root, &target, Path::new("out"), None);
+        assert_eq!(path, PathBuf::from("out/about.html"));
+    }
+
+    #[test]
+    fn same_origin_path_with_extension_is_kept_as_is() {
+        let root = u("https://example.com/");
+        let target = u("https://example.com/style.css");
+        let path = url_to_local_path(&root, &target, Path::new("out"), None);
+        assert_eq!(path, PathBuf::from("out/style.css"));
+    }
+
+    #[test]
+    fn query_string_is_slugified_into_filename() {
+        let root = u("https://example.com/");
+        let target = u("https://example.com/?page_id=32&foo=bar");
+        let path = url_to_local_path(&root, &target, Path::new("out"), None);
+        assert_eq!(path, PathBuf::from("out/page_id-32-foo-bar.html"));
+    }
+
+    #[test]
+    fn external_url_is_namespaced_under_host_dir() {
+        let root = u("https://example.com/");
+        let target = u("https://cdn.other.com/img/logo.png");
+        let path = url_to_local_path(&root, &target, Path::new("out"), None);
+        assert_eq!(path, PathBuf::from("out/cdn.other.com/img/logo.png"));
+    }
+
+    #[test]
+    fn external_url_without_extension_uses_ext_hint() {
+        let root = u("https://example.com/");
+        let target = u("https://cdn.other.com/asset?v=1");
+        let path = url_to_local_path(&root, &target, Path::new("out"), Some(".js"));
+        assert_eq!(path, PathBuf::from("out/cdn.other.com/asset.js"));
+    }
+
+    #[test]
+    fn query_to_slug_replaces_non_alphanumeric_and_trims_dashes() {
+        assert_eq!(query_to_slug("page_id=32&foo=bar"), "page_id-32-foo-bar");
+        assert_eq!(query_to_slug("a=b&&c=d"), "a-b-c-d");
+    }
+
+    #[test]
+    fn make_relative_walks_up_to_sibling_dir() {
+        let from = Path::new("out/blog/index.html");
+        let to = Path::new("out/style.css");
+        assert_eq!(make_relative(from, to), "../style.css");
+    }
+
+    #[test]
+    fn make_relative_prefixes_same_dir_with_dot_slash() {
+        let from = Path::new("out/index.html");
+        let to = Path::new("out/style.css");
+        assert_eq!(make_relative(from, to), "./style.css");
+    }
+
+    #[test]
+    fn has_extension_detects_alphanumeric_suffix_only() {
+        assert!(has_extension("/style.css"));
+        assert!(!has_extension("/blog/"));
+        assert!(!has_extension("/about"));
+        assert!(!has_extension("/weird.")); // trailing dot, empty ext
+    }
+}
