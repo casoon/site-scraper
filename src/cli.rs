@@ -37,13 +37,21 @@ struct Args {
     #[arg(long)]
     placeholder: Option<String>,
 
-    /// Include sitemap.xml URLs as seeds
-    #[arg(long, default_value_t = true)]
+    /// Include sitemap.xml URLs as seeds (default)
+    #[arg(long, overrides_with = "no_sitemap")]
     sitemap: bool,
 
-    /// Download external CSS/JS or leave as-is
-    #[arg(long, default_value_t = true)]
+    /// Don't use sitemap.xml URLs as seeds
+    #[arg(long, overrides_with = "sitemap")]
+    no_sitemap: bool,
+
+    /// Download external CSS/JS (default)
+    #[arg(long, overrides_with = "no_allow_external_assets")]
     allow_external_assets: bool,
+
+    /// Leave external CSS/JS as-is instead of downloading
+    #[arg(long, overrides_with = "allow_external_assets")]
+    no_allow_external_assets: bool,
 
     /// Identify as bot/crawler instead of simulating a browser
     #[arg(long)]
@@ -64,6 +72,17 @@ struct Args {
     /// Custom Referer header
     #[arg(long)]
     referer: Option<String>,
+}
+
+// Both options default to on; with overrides_with only the last flag given is set.
+impl Args {
+    fn use_sitemap(&self) -> bool {
+        self.sitemap || !self.no_sitemap
+    }
+
+    fn use_external_assets(&self) -> bool {
+        self.allow_external_assets || !self.no_allow_external_assets
+    }
 }
 
 struct PromptResult {
@@ -102,8 +121,8 @@ pub async fn run_cli() -> Result<()> {
             screenshot: args.screenshot,
             concurrency: args.concurrency,
             delay_ms: args.delay_ms,
-            sitemap: args.sitemap,
-            allow_external_assets: args.allow_external_assets,
+            sitemap: args.use_sitemap(),
+            allow_external_assets: args.use_external_assets(),
         }
     };
 
@@ -377,5 +396,42 @@ fn resolve_placeholder(raw: Option<&str>) -> String {
         Some("real") => "real".to_string(),
         Some("local") => "local".to_string(),
         _ => "external".to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(flags: &[&str]) -> Args {
+        let argv = ["site-scraper", "https://example.com"].iter().chain(flags);
+        Args::try_parse_from(argv).unwrap()
+    }
+
+    #[test]
+    fn sitemap_and_external_assets_default_to_on() {
+        let args = parse(&[]);
+        assert!(args.use_sitemap());
+        assert!(args.use_external_assets());
+    }
+
+    #[test]
+    fn no_flags_disable_sitemap_and_external_assets() {
+        let args = parse(&["--no-sitemap", "--no-allow-external-assets"]);
+        assert!(!args.use_sitemap());
+        assert!(!args.use_external_assets());
+    }
+
+    #[test]
+    fn last_of_positive_and_negative_flag_wins() {
+        assert!(parse(&["--no-sitemap", "--sitemap"]).use_sitemap());
+        assert!(!parse(&["--sitemap", "--no-sitemap"]).use_sitemap());
+        assert!(
+            parse(&["--no-allow-external-assets", "--allow-external-assets"]).use_external_assets()
+        );
+        assert!(
+            !parse(&["--allow-external-assets", "--no-allow-external-assets"])
+                .use_external_assets()
+        );
     }
 }
