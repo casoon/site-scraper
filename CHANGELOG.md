@@ -6,6 +6,9 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## Unreleased
 
+- Screenshot: capture pages with an HTTP error status (e.g. custom 404) instead of failing
+- Headless: raise the default browser navigation timeout to 60s and make it configurable with `--timeout`
+- Headless: default to a 1440px desktop viewport; add `--device desktop|tablet|mobile`
 - Update README: document headless mode, extended interactive setup, new options
 
 ## [1.4.4] - 2026-05-02

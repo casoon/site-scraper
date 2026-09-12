@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use chromiumoxide::{Browser, Page};
@@ -9,7 +9,8 @@ use tokio::sync::Semaphore;
 use url::Url;
 
 use super::browser::{full_page_png, launch_browser, open_page, prepare_page};
-use crate::network::fetch::is_not_found;
+use super::Device;
+use crate::network::fetch::{is_not_found, HttpStatusError};
 use crate::output;
 use crate::parsers::links::extract_links;
 use crate::parsers::sitemap::discover_from_sitemap;
@@ -22,6 +23,8 @@ pub struct HeadlessOptions {
     pub allow_external_assets: bool,
     pub placeholder: String,
     pub screenshot: bool,
+    pub device: Device,
+    pub request_timeout: Duration,
 }
 
 /// Settings shared by all page tasks of one crawl.
@@ -31,6 +34,7 @@ struct PageContext {
     screenshot_dir: Option<PathBuf>,
     max_depth: u32,
     rewrite_opts: RewriteOptions,
+    device: Device,
 }
 
 fn strip_fragment(url: &Url) -> String {
@@ -46,7 +50,7 @@ pub async fn crawl(
     opts: HeadlessOptions,
 ) -> Result<()> {
     let started = Instant::now();
-    let browser = Arc::new(launch_browser(chrome_path).await?);
+    let browser = Arc::new(launch_browser(chrome_path, opts.device, opts.request_timeout).await?);
 
     let root = Url::parse(start_url)?;
 
@@ -68,6 +72,7 @@ pub async fn crawl(
             allow_external_assets: opts.allow_external_assets,
             placeholder: opts.placeholder,
         },
+        device: opts.device,
     });
     // Each permit is one open browser tab.
     let semaphore = Arc::new(Semaphore::new(opts.concurrency));
@@ -168,7 +173,7 @@ async fn process_page(
     url: Url,
     depth: u32,
 ) -> Result<Vec<(Url, u32)>> {
-    let page = open_page(browser).await?;
+    let page = open_page(browser, ctx.device).await?;
     let captured = capture_page(&page, &url, ctx.screenshot_dir.as_deref()).await;
     let _ = page.close().await;
     let html = captured?;
@@ -191,7 +196,10 @@ async fn process_page(
 
 /// Navigate to `url`, freeze the rendered DOM and return its HTML.
 async fn capture_page(page: &Page, url: &Url, screenshot_dir: Option<&Path>) -> Result<String> {
-    prepare_page(page, url).await?;
+    let status = prepare_page(page, url).await?;
+    if status >= 400 {
+        return Err(HttpStatusError(status).into());
+    }
 
     // Capture HTML while scrolled — preserves scroll-driven class
     // changes (e.g. header gaining a background). The screenshot scrolls

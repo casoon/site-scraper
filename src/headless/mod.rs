@@ -4,6 +4,17 @@ use runemark::ErrorBlock;
 
 use crate::output::BlockError;
 
+/// Viewport a headless render or screenshot uses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum Device {
+    /// 1440x900 (default)
+    Desktop,
+    /// 768x1024
+    Tablet,
+    /// 375x812 with mobile emulation (scale factor, touch, mobile user agent)
+    Mobile,
+}
+
 /// Find a usable Chrome or Chromium executable on the current system.
 pub fn find_chrome() -> Option<PathBuf> {
     let abs_paths: &[&str] = &[

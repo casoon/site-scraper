@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use url::Url;
 
-use crate::headless::{chrome_not_found, find_chrome};
+use crate::headless::{chrome_not_found, find_chrome, Device};
 
 /// Longest file name stem before it is shortened and made unique with a hash.
 const MAX_STEM_LEN: usize = 150;
@@ -24,7 +25,13 @@ pub struct ScreenshotJob {
 }
 
 /// Take full-page screenshots of all input URLs into `output`.
-pub async fn run(input: Input, output: &Path, concurrency: usize) -> Result<()> {
+pub async fn run(
+    input: Input,
+    output: &Path,
+    concurrency: usize,
+    device: Device,
+    timeout: Duration,
+) -> Result<()> {
     // Validate every URL before the browser starts
     let urls = match input {
         Input::Url(s) => vec![parse_url(&s).map_err(|e| anyhow::anyhow!("{}", e))?],
@@ -60,12 +67,13 @@ pub async fn run(input: Input, output: &Path, concurrency: usize) -> Result<()> 
         tokio::fs::create_dir_all(output)
             .await
             .with_context(|| format!("Cannot create output directory {}", output.display()))?;
-        crate::headless::screenshot::capture_all(&chrome, jobs, output, concurrency).await
+        crate::headless::screenshot::capture_all(&chrome, jobs, output, concurrency, device, timeout)
+            .await
     }
 
     #[cfg(not(feature = "headless"))]
     {
-        let _ = (jobs, concurrency, chrome);
+        let _ = (jobs, concurrency, chrome, device, timeout);
         anyhow::bail!(
             "Headless mode is not compiled in.\n\
              Rebuild with:  cargo build --features headless"

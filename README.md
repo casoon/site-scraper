@@ -109,6 +109,8 @@ Progress and per-page status lines go to stderr (with a progress bar in an inter
 | `--bot` | interactive / `false` | Identify as crawler instead of simulating a browser |
 | `--headless` | `false` | Use Chrome/Chromium to render JavaScript before saving (requires Chrome installed) |
 | `--screenshot` | `false` | Save a full-page PNG screenshot per page (requires `--headless`) |
+| `--device` | `desktop` | Viewport for `--headless`: `desktop` (1440x900), `tablet` (768x1024) or `mobile` (375x812, with mobile emulation) |
+| `--timeout` | `60` | Seconds to wait for browser navigation before failing (only used with `--headless`) |
 | `--user-agent` | - | Custom User-Agent header (overrides `--bot`) |
 | `--referer` | - | Custom Referer header |
 
@@ -155,8 +157,12 @@ The URL file is UTF-8 with one URL per line; blank lines and lines starting with
 | `[URL]` / `--file <FILE>` | - | A single URL or a URL file (exactly one is required) |
 | `--output <DIR>` | `screenshots` | Output directory; existing files in it are kept |
 | `--concurrency` | `2` | Number of parallel browser pages |
+| `--device` | `desktop` | Viewport: `desktop` (1440x900), `tablet` (768x1024) or `mobile` (375x812, with mobile emulation) |
+| `--timeout` | `60` | Seconds to wait for browser navigation before failing |
 
 Files are named `<host>--<path>--<query>.png`, e.g. `example.com--index.png` or `example.com--suche--q-astro.png`. If two URLs map to the same name, a short stable hash of the URL is appended. A screenshot only replaces its own file, and only once it was taken successfully. If any screenshot fails, the exit code is `1`.
+
+Pages that respond with an HTTP error status (e.g. a custom 404) are still captured, with the status shown next to the saved file.
 
 ## Build
 

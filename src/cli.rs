@@ -1,5 +1,6 @@
 use std::io::IsTerminal;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -7,7 +8,7 @@ use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 use url::Url;
 
 use crate::crawler::{crawl, CrawlOptions};
-use crate::headless::{chrome_not_found, find_chrome};
+use crate::headless::{chrome_not_found, find_chrome, Device};
 use crate::network::fetch::{configure_requests, resolve_redirect, ConfigureOptions};
 use crate::output;
 use crate::screenshot;
@@ -53,6 +54,14 @@ struct ScreenshotArgs {
     /// Number of parallel browser pages
     #[arg(long, default_value_t = 2, value_parser = clap::builder::RangedU64ValueParser::<usize>::new().range(1..))]
     concurrency: usize,
+
+    /// Viewport to render with
+    #[arg(long, value_enum, default_value = "desktop")]
+    device: Device,
+
+    /// Seconds to wait for browser navigation before failing
+    #[arg(long, default_value_t = 60, value_parser = clap::builder::RangedU64ValueParser::<u64>::new().range(1..))]
+    timeout: u64,
 }
 
 #[derive(clap::Args)]
@@ -112,6 +121,14 @@ struct Args {
     /// Custom Referer header
     #[arg(long)]
     referer: Option<String>,
+
+    /// Viewport to render with (only used with --headless)
+    #[arg(long, value_enum, default_value = "desktop")]
+    device: Device,
+
+    /// Seconds to wait for browser navigation before failing (only used with --headless)
+    #[arg(long, default_value_t = 60, value_parser = clap::builder::RangedU64ValueParser::<u64>::new().range(1..))]
+    timeout: u64,
 }
 
 // Both options default to on; with overrides_with only the last flag given is set.
@@ -148,7 +165,14 @@ pub async fn run_cli() -> Result<()> {
             (None, Some(file)) => screenshot::Input::File(file),
             _ => unreachable!("clap requires exactly one of URL and --file"),
         };
-        return screenshot::run(input, &args.output, args.concurrency).await;
+        return screenshot::run(
+            input,
+            &args.output,
+            args.concurrency,
+            args.device,
+            Duration::from_secs(args.timeout),
+        )
+        .await;
     }
 
     let args = cli.crawl;
@@ -207,7 +231,14 @@ pub async fn run_cli() -> Result<()> {
     ensure_dir(&out_dir).await?;
 
     if opts.headless {
-        return run_headless(start_url.as_str(), &out_dir, opts).await;
+        return run_headless(
+            start_url.as_str(),
+            &out_dir,
+            opts,
+            args.device,
+            Duration::from_secs(args.timeout),
+        )
+        .await;
     }
 
     crawl(
@@ -228,6 +259,8 @@ async fn run_headless(
     start_url: &str,
     out_dir: &std::path::Path,
     opts: PromptResult,
+    device: Device,
+    timeout: Duration,
 ) -> Result<()> {
     let chrome = find_chrome().ok_or_else(chrome_not_found)?;
 
@@ -247,6 +280,8 @@ async fn run_headless(
                 allow_external_assets: opts.allow_external_assets,
                 placeholder: opts.placeholder,
                 screenshot: opts.screenshot,
+                device,
+                request_timeout: timeout,
             },
         )
         .await
@@ -254,7 +289,7 @@ async fn run_headless(
 
     #[cfg(not(feature = "headless"))]
     {
-        let _ = (start_url, out_dir, opts, chrome);
+        let _ = (start_url, out_dir, opts, chrome, device, timeout);
         anyhow::bail!(
             "Headless mode is not compiled in.\n\
              Rebuild with:  cargo build --features headless"
@@ -493,10 +528,50 @@ mod tests {
     }
 
     #[test]
+    fn screenshot_device_defaults_to_desktop() {
+        let args = parse_screenshot(&["https://example.com"]).unwrap();
+        assert_eq!(args.device, Device::Desktop);
+        assert_eq!(args.timeout, 60);
+    }
+
+    #[test]
+    fn screenshot_accepts_device_and_timeout() {
+        let args = parse_screenshot(&[
+            "https://example.com",
+            "--device",
+            "mobile",
+            "--timeout",
+            "90",
+        ])
+        .unwrap();
+        assert_eq!(args.device, Device::Mobile);
+        assert_eq!(args.timeout, 90);
+    }
+
+    #[test]
+    fn screenshot_rejects_zero_timeout() {
+        assert!(parse_screenshot(&["https://example.com", "--timeout", "0"]).is_err());
+    }
+
+    #[test]
     fn sitemap_and_external_assets_default_to_on() {
         let args = parse(&[]);
         assert!(args.use_sitemap());
         assert!(args.use_external_assets());
+    }
+
+    #[test]
+    fn crawl_device_and_timeout_default() {
+        let args = parse(&[]);
+        assert_eq!(args.device, Device::Desktop);
+        assert_eq!(args.timeout, 60);
+    }
+
+    #[test]
+    fn crawl_accepts_device_and_timeout() {
+        let args = parse(&["--device", "tablet", "--timeout", "45"]);
+        assert_eq!(args.device, Device::Tablet);
+        assert_eq!(args.timeout, 45);
     }
 
     #[test]

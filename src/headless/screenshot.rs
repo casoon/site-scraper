@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use chromiumoxide::Browser;
@@ -8,6 +8,7 @@ use tokio::sync::Semaphore;
 use url::Url;
 
 use super::browser::{full_page_png, launch_browser, open_page, prepare_page};
+use super::Device;
 use crate::output;
 use crate::screenshot::ScreenshotJob;
 
@@ -17,9 +18,11 @@ pub async fn capture_all(
     jobs: Vec<ScreenshotJob>,
     out_dir: &Path,
     concurrency: usize,
+    device: Device,
+    request_timeout: Duration,
 ) -> Result<()> {
     let started = Instant::now();
-    let browser = Arc::new(launch_browser(chrome_path).await?);
+    let browser = Arc::new(launch_browser(chrome_path, device, request_timeout).await?);
     let semaphore = Arc::new(Semaphore::new(concurrency));
     let total = jobs.len();
     output::progress_start(total, "Taking screenshots");
@@ -33,7 +36,7 @@ pub async fn capture_all(
             url,
             tokio::spawn(async move {
                 let _permit = sem.acquire().await.unwrap();
-                capture_one(&browser, &job.url, &job.dest).await
+                capture_one(&browser, &job.url, &job.dest, device).await
             }),
         ));
     }
@@ -62,17 +65,25 @@ pub async fn capture_all(
     output::screenshot_summary(out_dir, total, failed, started)
 }
 
-async fn capture_one(browser: &Browser, url: &Url, dest: &Path) -> Result<()> {
-    let page = open_page(browser).await?;
-    let png = async {
-        prepare_page(&page, url).await?;
-        full_page_png(&page).await
+async fn capture_one(browser: &Browser, url: &Url, dest: &Path, device: Device) -> Result<()> {
+    let page = open_page(browser, device).await?;
+    let captured = async {
+        // Screenshot mode captures a page regardless of its HTTP status (e.g.
+        // a custom 404), unlike crawl/mirror mode which fails on 4xx/5xx.
+        let status = prepare_page(&page, url).await?;
+        let png = full_page_png(&page).await?;
+        Ok::<_, anyhow::Error>((status, png))
     }
     .await;
     let _ = page.close().await;
 
-    write_atomic(dest, &png?).await?;
-    output::success(&format!("{} → {}", url, dest.display()));
+    let (status, png) = captured?;
+    write_atomic(dest, &png).await?;
+    if status >= 400 {
+        output::success(&format!("{} → {} (HTTP {})", url, dest.display(), status));
+    } else {
+        output::success(&format!("{} → {}", url, dest.display()));
+    }
     Ok(())
 }
 
