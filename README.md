@@ -1,8 +1,11 @@
 # Site Scraper
 
 [![CI](https://github.com/casoon/site-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/casoon/site-scraper/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087685)](https://casoon.github.io/site-scraper/)
 
 A fast CLI tool written in Rust that creates static copies of websites. It crawls from a starting URL, saves HTML files along with stylesheets and scripts locally, and downloads or replaces images. When called with only a URL, it guides you through the most important options interactively.
+
+[Read the full documentation →](https://casoon.github.io/site-scraper/)
 
 ## Why?
 
@@ -91,6 +94,8 @@ site-scraper https://www.example.com --concurrency 8 --delay-ms 100
 
 All results are saved to `./output/<domain>/`. The folder is recreated on each run. HTML files are stored in a directory structure matching the URL paths. CSS, JS and fonts are downloaded and all references are rewritten to local relative paths. Images are either downloaded as originals or replaced with placeholders, depending on the `--placeholder` option.
 
+Progress and per-page status lines go to stderr (with a progress bar in an interactive terminal), the final summary goes to stdout. Colors follow [`NO_COLOR`](https://no-color.org/) and are disabled when output is redirected. The exit code is `1` if any page or screenshot failed.
+
 ### Options
 
 | Option | Default | Description |
@@ -130,6 +135,28 @@ cargo build --release --features headless
 ```
 
 Pre-built binaries from the releases page already include headless support.
+
+### Screenshot mode
+
+`site-scraper screenshot` only takes full-page PNG screenshots — nothing is mirrored. It uses the same Chrome rendering as headless mode.
+
+```sh
+# One URL
+site-scraper screenshot https://www.example.com
+
+# A list of URLs, into a custom directory
+site-scraper screenshot --file urls.txt --output shots/
+```
+
+The URL file is UTF-8 with one URL per line; blank lines and lines starting with `#` are ignored. All URLs are validated before the browser starts, and invalid lines are reported with their line number.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `[URL]` / `--file <FILE>` | - | A single URL or a URL file (exactly one is required) |
+| `--output <DIR>` | `screenshots` | Output directory; existing files in it are kept |
+| `--concurrency` | `2` | Number of parallel browser pages |
+
+Files are named `<host>--<path>--<query>.png`, e.g. `example.com--index.png` or `example.com--suche--q-astro.png`. If two URLs map to the same name, a short stable hash of the URL is appended. A screenshot only replaces its own file, and only once it was taken successfully. If any screenshot fails, the exit code is `1`.
 
 ## Build
 

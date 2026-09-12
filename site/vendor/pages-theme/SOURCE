@@ -1,0 +1,6 @@
+@casoon/pages-theme 0.1.0
+source: gh-pages-template@d52b478
+synced: 2026-09-12
+
+Vendored copy. Do not edit here: change the theme in gh-pages-template,
+then run scripts/sync-theme.sh <this repo>.

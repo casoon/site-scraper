@@ -1,0 +1,100 @@
+---
+import {
+  Badge,
+  Badges,
+  BuildOutput,
+  CodeBlock,
+  Facts,
+  Features,
+  Hero,
+  Install,
+  Quickstart,
+  Terminal,
+} from '@casoon/pages-theme/components';
+import Base from '@casoon/pages-theme/layouts/Base.astro';
+import help from '../../../examples/crawl-help.txt?raw';
+import screenshotHelp from '../../../examples/screenshot-help.txt?raw';
+
+const quickstart = `# Mirror a site with browser-like request headers
+site-scraper https://www.example.com \\
+  --max-depth 2 \\
+  --placeholder real
+
+# Open the generated copy
+open output/www.example.com/index.html`;
+---
+
+<Base>
+  <Hero
+    title="Take a website with you."
+    lead="site-scraper follows internal links, downloads pages and assets, and rewrites references into a self-contained local copy. Use headless Chrome when the page needs JavaScript, or capture full-page screenshots without mirroring anything."
+  >
+    <Install
+      commands={[
+        {
+          label: 'curl',
+          command: 'curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash',
+        },
+        {
+          label: 'cargo',
+          command: 'cargo install --git https://github.com/casoon/site-scraper',
+        },
+      ]}
+    />
+    <Badges>
+      <Badge>MIT</Badge>
+      <Badge>v1.4.4</Badge>
+      <Badge>Rust CLI</Badge>
+      <Badge>Linux + macOS</Badge>
+    </Badges>
+    <Terminal slot="output" title="site-scraper --help" dots ansi={help} />
+  </Hero>
+
+  <Facts
+    items={[
+      { value: '3', label: 'image strategies' },
+      { value: '2', label: 'crawl engines: HTTP and headless Chrome' },
+      { value: '4', label: 'prebuilt release targets' },
+      { value: '1', label: 'command for batch screenshots' },
+    ]}
+  />
+
+  <Features
+    items={[
+      {
+        title: 'Self-contained static copies',
+        body: 'HTML, CSS, JavaScript and fonts are saved locally. References are rewritten to relative paths so the result can be opened without the original CMS.',
+      },
+      {
+        title: 'Choose how images travel',
+        body: 'Download originals, generate local gray placeholders, or replace images with external placehold.co URLs.',
+      },
+      {
+        title: 'Render JavaScript-heavy pages',
+        body: 'The optional headless mode launches local Chrome or Chromium, waits for frameworks, scrolls the page, and saves the rendered HTML.',
+      },
+      {
+        title: 'Screenshot one URL or a list',
+        body: 'The screenshot subcommand captures full-page PNGs with deterministic filenames and bounded browser concurrency.',
+      },
+    ]}
+  />
+
+  <BuildOutput
+    caption="The command reference shown here is captured from the current CLI, and the same fixture is used by the showcase."
+    file="examples/screenshot-help.txt"
+  >
+    <Terminal title="site-scraper screenshot --help" ansi={screenshotHelp} />
+  </BuildOutput>
+
+  <Quickstart
+    lead="Three steps from a live URL to a local copy. The documentation covers every crawl mode and option."
+    steps={[
+      'Install the latest release or build the Rust binary from source.',
+      'Run <code>site-scraper</code> with a URL; add flags to skip the interactive setup.',
+      'Open the generated files under <code>output/&lt;domain&gt;/</code>.',
+    ]}
+  >
+    <CodeBlock code={quickstart} lang="shell" title="terminal" label="Shell" />
+  </Quickstart>
+</Base>

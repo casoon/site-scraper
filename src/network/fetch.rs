@@ -274,7 +274,7 @@ pub async fn download_binary(url: &str, dest: &Path, silent: bool) -> bool {
         Ok(()) => true,
         Err(e) => {
             if !silent {
-                eprintln!("Skipping asset {}: {}", url, e);
+                crate::output::skipped(&format!("Skipping asset {}: {}", url, e));
             }
             false
         }

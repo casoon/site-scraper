@@ -1,11 +1,13 @@
 use std::collections::HashSet;
 use std::path::Path;
+use std::time::Instant;
 
 use anyhow::Result;
 use tokio::sync::Semaphore;
 use url::Url;
 
 use crate::network::fetch::{fetch_with_retry, is_not_found};
+use crate::output;
 use crate::parsers::links::extract_links;
 use crate::parsers::sitemap::discover_from_sitemap;
 use crate::processors::html::{rewrite_and_save_html, RewriteOptions};
@@ -37,6 +39,7 @@ fn strip_fragment(url: &Url) -> String {
 /// Main crawl function.
 /// Recursively crawls a website, downloading HTML and assets.
 pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Result<()> {
+    let started = Instant::now();
     let root = Url::parse(start_url)?;
     let semaphore = std::sync::Arc::new(Semaphore::new(options.concurrency));
 
@@ -57,8 +60,15 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
         }
     }
 
+    output::info(&match sitemap_urls.len() {
+        0 => format!("Crawling {}", root),
+        n => format!("Crawling {} ({} URLs from sitemap)", root, n),
+    });
+
     let mut seen = HashSet::new();
     let mut failed = 0usize;
+    let mut warnings = 0usize;
+    let mut done = 0usize;
 
     while !to_visit.is_empty() {
         let batch = std::mem::take(&mut to_visit);
@@ -92,8 +102,12 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
             ));
         }
 
+        output::progress_grow(seen.len(), "Crawling");
         for (page_url, handle) in handles {
-            match handle.await {
+            let result = handle.await;
+            done += 1;
+            output::progress_advance(done, page_url.as_str());
+            match result {
                 Ok(Ok(new_links)) => {
                     for link in new_links {
                         let lk = strip_fragment(&link.0);
@@ -106,24 +120,22 @@ pub async fn crawl(start_url: &str, out_dir: &Path, options: CrawlOptions) -> Re
                 Ok(Err(e))
                     if is_not_found(&e) && sitemap_urls.contains(&strip_fragment(&page_url)) =>
                 {
-                    eprintln!("Warning: {}: {:#} (listed in sitemap)", page_url, e);
+                    warnings += 1;
+                    output::warning(&format!("{}: {:#} (listed in sitemap)", page_url, e));
                 }
                 Ok(Err(e)) => {
                     failed += 1;
-                    eprintln!("Failed: {}: {:#}", page_url, e);
+                    output::failure(&format!("{}: {:#}", page_url, e));
                 }
                 Err(e) => {
                     failed += 1;
-                    eprintln!("Failed: {}: {}", page_url, e);
+                    output::failure(&format!("{}: {}", page_url, e));
                 }
             }
         }
     }
 
-    if failed > 0 {
-        anyhow::bail!("{} of {} pages failed", failed, seen.len());
-    }
-    Ok(())
+    output::crawl_summary(start_url, out_dir, seen.len(), failed, warnings, started)
 }
 
 async fn process_page(params: PageParams) -> Result<Vec<(Url, u32)>> {
@@ -162,7 +174,7 @@ async fn process_page(params: PageParams) -> Result<Vec<(Url, u32)>> {
         .strip_prefix(&params.out_dir)
         .unwrap_or(&out_file)
         .to_string_lossy();
-    println!("Saved: {} -> {}", params.url, rel_path);
+    output::success(&format!("{} → {}", params.url, rel_path));
 
     Ok(new_links)
 }

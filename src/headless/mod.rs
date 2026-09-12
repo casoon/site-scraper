@@ -1,5 +1,9 @@
 use std::path::{Path, PathBuf};
 
+use runemark::ErrorBlock;
+
+use crate::output::BlockError;
+
 /// Find a usable Chrome or Chromium executable on the current system.
 pub fn find_chrome() -> Option<PathBuf> {
     let abs_paths: &[&str] = &[
@@ -40,24 +44,35 @@ pub fn find_chrome() -> Option<PathBuf> {
     None
 }
 
-/// Print OS-specific installation instructions for Chrome / Chromium.
-pub fn print_install_instructions() {
-    eprintln!("\nError: --headless requires Chrome or Chromium, but none was found.\n");
-    eprintln!("Install Chrome or Chromium for your platform:\n");
-    eprintln!("  macOS");
-    eprintln!("    brew install --cask google-chrome");
-    eprintln!("    brew install --cask chromium          # open-source build\n");
-    eprintln!("  Ubuntu / Debian");
-    eprintln!("    sudo apt install -y chromium-browser");
-    eprintln!("    # or Google Chrome:");
-    eprintln!("    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb");
-    eprintln!("    sudo dpkg -i google-chrome-stable_current_amd64.deb\n");
-    eprintln!("  Arch Linux");
-    eprintln!("    sudo pacman -S chromium\n");
-    eprintln!("  Windows");
-    eprintln!("    winget install Google.Chrome\n");
-    eprintln!("After installation, re-run site-scraper with --headless.\n");
+/// Error block telling the user how to install Chrome / Chromium.
+pub fn chrome_not_found() -> anyhow::Error {
+    let commands: &[&str] = if cfg!(target_os = "macos") {
+        &[
+            "brew install --cask google-chrome",
+            "brew install --cask chromium   # open-source build",
+        ]
+    } else if cfg!(target_os = "windows") {
+        &["winget install Google.Chrome"]
+    } else {
+        &[
+            "sudo apt install -y chromium-browser   # Ubuntu / Debian",
+            "sudo pacman -S chromium   # Arch Linux",
+        ]
+    };
+    let block = commands.iter().fold(
+        ErrorBlock::new("Chrome or Chromium not found")
+            .with_explanation(
+                "--headless and the screenshot command need a local Chrome or Chromium.",
+            )
+            .with_remedy("Install it, then run site-scraper again:"),
+        |block, cmd| block.add_command(*cmd),
+    );
+    BlockError(block).into()
 }
 
 #[cfg(feature = "headless")]
+mod browser;
+#[cfg(feature = "headless")]
 pub mod crawler;
+#[cfg(feature = "headless")]
+pub mod screenshot;

@@ -1,0 +1,61 @@
+---
+title: Installation
+description: Install a prebuilt binary for Linux or macOS, use Cargo, or build site-scraper from source.
+order: 1
+---
+
+<Tabs
+  label="Installation method"
+  tabs={[
+    { id: 'release', label: 'Release binary' },
+    { id: 'cargo', label: 'Cargo' },
+    { id: 'source', label: 'Source' },
+  ]}
+>
+<div slot="release">
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash
+```
+
+The installer detects Linux or macOS and x86_64 or arm64. It installs the latest release to
+`~/.local/bin` unless `INSTALL_DIR` is set.
+
+</div>
+<div slot="cargo">
+
+```sh
+cargo install --git https://github.com/casoon/site-scraper
+```
+
+</div>
+<div slot="source">
+
+```sh
+git clone https://github.com/casoon/site-scraper.git
+cd site-scraper
+cargo install --path .
+```
+
+</div>
+</Tabs>
+
+## Headless support
+
+Release binaries include headless support. A local source build needs the feature explicitly:
+
+```sh
+cargo build --release --features headless
+```
+
+Headless crawling and screenshots also require Chrome or Chromium on the machine. Standard HTTP
+crawls do not.
+
+## Verify the install
+
+```sh
+site-scraper --version
+# site-scraper 1.4.4
+```
+
+Continue with the [Quickstart](../quickstart/).

@@ -28,3 +28,4 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 dialoguer = "0.11"
 chromiumoxide = { version = "0.9", optional = true }
 futures = { version = "0.3", optional = true }
+runemark = { version = "0.3.1", features = ["progress"] }

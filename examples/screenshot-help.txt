@@ -1,0 +1,12 @@
+Only take full-page screenshots of one URL or a list of URLs (requires Chrome)
+
+Usage: site-scraper screenshot [OPTIONS] [URL]
+
+Arguments:
+  [URL]  URL to screenshot
+
+Options:
+      --file <FILE>                Text file with one URL per line (blank lines and # comments are ignored)
+      --output <OUTPUT>            Output directory (existing screenshots are kept) [default: screenshots]
+      --concurrency <CONCURRENCY>  Number of parallel browser pages [default: 2]
+  -h, --help                       Print help

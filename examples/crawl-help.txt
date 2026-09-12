@@ -1,0 +1,28 @@
+CLI utility to mirror a website (HTML + CSS) into a local folder.
+
+Usage: site-scraper [OPTIONS] <URL>
+       site-scraper <COMMAND>
+
+Commands:
+  screenshot  Only take full-page screenshots of one URL or a list of URLs (requires Chrome)
+  help        Print this message or the help of the given subcommand(s)
+
+Arguments:
+  <URL>  URL to scrape
+
+Options:
+      --max-depth <MAX_DEPTH>      Maximum crawl depth relative to the start page
+      --concurrency <CONCURRENCY>  Number of parallel downloads [default: 4]
+      --delay-ms <DELAY_MS>        Delay between requests in milliseconds [default: 300]
+      --placeholder <PLACEHOLDER>  Image placeholder strategy: "real" (download originals), "local" (gray PNG), or "external" (placehold.co)
+      --sitemap                    Include sitemap.xml URLs as seeds (default)
+      --no-sitemap                 Don't use sitemap.xml URLs as seeds
+      --allow-external-assets      Download external CSS/JS (default)
+      --no-allow-external-assets   Leave external CSS/JS as-is instead of downloading
+      --bot                        Identify as bot/crawler instead of simulating a browser
+      --headless                   Use a headless Chrome/Chromium browser to render JavaScript (requires Chrome installed)
+      --screenshot                 Save a full-page screenshot for each crawled page (requires --headless)
+      --user-agent <USER_AGENT>    Custom User-Agent header
+      --referer <REFERER>          Custom Referer header
+  -h, --help                       Print help
+  -V, --version                    Print version

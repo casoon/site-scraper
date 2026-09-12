@@ -2,24 +2,64 @@ use std::io::IsTerminal;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 use url::Url;
 
 use crate::crawler::{crawl, CrawlOptions};
-use crate::headless::{find_chrome, print_install_instructions};
+use crate::headless::{chrome_not_found, find_chrome};
 use crate::network::fetch::{configure_requests, resolve_redirect, ConfigureOptions};
+use crate::output;
+use crate::screenshot;
 use crate::utils::filesystem::{ensure_dir, safe_filename};
 
 #[derive(Parser)]
 #[command(
     name = "site-scraper",
     version,
-    about = "CLI utility to mirror a website (HTML + CSS) into a local folder."
+    about = "CLI utility to mirror a website (HTML + CSS) into a local folder.",
+    // Keep `site-scraper <URL> [OPTIONS]` working next to subcommands
+    args_conflicts_with_subcommands = true,
+    subcommand_negates_reqs = true
 )]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+
+    #[command(flatten)]
+    crawl: Args,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Only take full-page screenshots of one URL or a list of URLs (requires Chrome)
+    Screenshot(ScreenshotArgs),
+}
+
+#[derive(clap::Args)]
+struct ScreenshotArgs {
+    /// URL to screenshot
+    #[arg(required_unless_present = "file", conflicts_with = "file")]
+    url: Option<String>,
+
+    /// Text file with one URL per line (blank lines and # comments are ignored)
+    #[arg(long)]
+    file: Option<PathBuf>,
+
+    /// Output directory (existing screenshots are kept)
+    #[arg(long, default_value = "screenshots")]
+    output: PathBuf,
+
+    /// Number of parallel browser pages
+    #[arg(long, default_value_t = 2, value_parser = clap::builder::RangedU64ValueParser::<usize>::new().range(1..))]
+    concurrency: usize,
+}
+
+#[derive(clap::Args)]
 struct Args {
     /// URL to scrape
-    url: String,
+    #[arg(required = true)]
+    url: Option<String>,
 
     /// Maximum crawl depth relative to the start page
     #[arg(long)]
@@ -101,9 +141,22 @@ struct PromptResult {
 
 /// Parse CLI arguments and run the crawler.
 pub async fn run_cli() -> Result<()> {
-    let args = Args::parse();
+    let cli = Cli::parse();
+    if let Some(Command::Screenshot(args)) = cli.command {
+        let input = match (args.url, args.file) {
+            (Some(url), None) => screenshot::Input::Url(url),
+            (None, Some(file)) => screenshot::Input::File(file),
+            _ => unreachable!("clap requires exactly one of URL and --file"),
+        };
+        return screenshot::run(input, &args.output, args.concurrency).await;
+    }
 
-    Url::parse(&args.url).map_err(|_| anyhow::anyhow!("Invalid URL provided"))?;
+    let args = cli.crawl;
+    let url = args
+        .url
+        .clone()
+        .expect("clap requires URL without a subcommand");
+    Url::parse(&url).map_err(|_| anyhow::anyhow!("Invalid URL provided"))?;
 
     // Enter interactive mode when no options were explicitly set and stdin is a terminal
     let interactive = args.max_depth.is_none()
@@ -136,7 +189,7 @@ pub async fn run_cli() -> Result<()> {
     })?;
 
     // Resolve the canonical start URL by following any redirects (e.g. www → non-www)
-    let canonical = resolve_redirect(&args.url).await;
+    let canonical = resolve_redirect(&url).await;
     let start_url =
         Url::parse(&canonical).map_err(|_| anyhow::anyhow!("Invalid URL after redirect"))?;
 
@@ -176,15 +229,9 @@ async fn run_headless(
     out_dir: &std::path::Path,
     opts: PromptResult,
 ) -> Result<()> {
-    let chrome = match find_chrome() {
-        Some(p) => p,
-        None => {
-            print_install_instructions();
-            anyhow::bail!("Chrome or Chromium not found");
-        }
-    };
+    let chrome = find_chrome().ok_or_else(chrome_not_found)?;
 
-    println!("Using browser: {}", chrome.display());
+    output::info(&format!("Using browser: {}", chrome.display()));
 
     #[cfg(feature = "headless")]
     {
@@ -394,7 +441,55 @@ mod tests {
 
     fn parse(flags: &[&str]) -> Args {
         let argv = ["site-scraper", "https://example.com"].iter().chain(flags);
-        Args::try_parse_from(argv).unwrap()
+        Cli::try_parse_from(argv).unwrap().crawl
+    }
+
+    fn parse_screenshot(argv: &[&str]) -> Result<ScreenshotArgs, clap::Error> {
+        let argv = ["site-scraper", "screenshot"].iter().chain(argv);
+        match Cli::try_parse_from(argv)?.command {
+            Some(Command::Screenshot(args)) => Ok(args),
+            None => panic!("expected screenshot subcommand"),
+        }
+    }
+
+    #[test]
+    fn crawl_invocation_without_subcommand_still_works() {
+        let cli = Cli::try_parse_from(["site-scraper", "https://example.com", "--max-depth", "1"])
+            .unwrap();
+        assert!(cli.command.is_none());
+        assert_eq!(cli.crawl.url.as_deref(), Some("https://example.com"));
+        assert_eq!(cli.crawl.max_depth, Some(1));
+    }
+
+    #[test]
+    fn crawl_requires_url() {
+        assert!(Cli::try_parse_from(["site-scraper"]).is_err());
+    }
+
+    #[test]
+    fn screenshot_accepts_url_with_defaults() {
+        let args = parse_screenshot(&["https://example.com"]).unwrap();
+        assert_eq!(args.url.as_deref(), Some("https://example.com"));
+        assert_eq!(args.output, PathBuf::from("screenshots"));
+        assert_eq!(args.concurrency, 2);
+    }
+
+    #[test]
+    fn screenshot_accepts_file_and_output() {
+        let args = parse_screenshot(&["--file", "urls.txt", "--output", "shots/"]).unwrap();
+        assert_eq!(args.file, Some(PathBuf::from("urls.txt")));
+        assert_eq!(args.output, PathBuf::from("shots/"));
+    }
+
+    #[test]
+    fn screenshot_requires_exactly_one_input() {
+        assert!(parse_screenshot(&[]).is_err());
+        assert!(parse_screenshot(&["https://example.com", "--file", "urls.txt"]).is_err());
+    }
+
+    #[test]
+    fn screenshot_rejects_zero_concurrency() {
+        assert!(parse_screenshot(&["https://example.com", "--concurrency", "0"]).is_err());
     }
 
     #[test]
