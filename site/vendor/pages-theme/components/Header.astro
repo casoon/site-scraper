@@ -13,7 +13,6 @@ const nav = [
 <header class="header">
   <div class="inner">
     <a class="home" href={url()}>
-      <span class="mark" aria-hidden="true"></span>
       <span class="name">{config.name}</span>
       {config.version && <span class="version">v{config.version}</span>}
     </a>
@@ -66,13 +65,6 @@ const nav = [
   }
   .home:hover {
     color: var(--heading);
-  }
-  .mark {
-    display: block;
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    background: var(--brand);
   }
   .name {
     font-size: 15.5px;
