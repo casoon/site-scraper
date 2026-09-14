@@ -10,6 +10,7 @@ use futures::StreamExt;
 use url::Url;
 
 use super::Device;
+use crate::network::fetch::{fetch_with_retry, HttpStatusError};
 
 /// User agent sent when emulating a mobile device: the device metrics
 /// override alone doesn't change `navigator.userAgent`, so pages that
@@ -101,7 +102,19 @@ pub async fn prepare_page(page: &Page, url: &Url) -> Result<u16> {
     // reliable. Waiting for navigation also waits for the initial load;
     // after it we scroll to trigger IntersectionObserver animations
     // (common in React/Next.js apps that use opacity-0 as initial state).
-    page.goto(url.as_str()).await?;
+    if let Err(e) = page.goto(url.as_str()).await {
+        // Chrome reports an HTTP error status with an empty body as a network
+        // error. Recover the real status so callers handle it like any other
+        // 4xx/5xx (e.g. a stale sitemap entry only warns).
+        if e.to_string().contains("ERR_HTTP_RESPONSE_CODE_FAILURE") {
+            if let Err(status_err) = fetch_with_retry(url.as_str(), 1, 0).await {
+                if status_err.is::<HttpStatusError>() {
+                    return Err(status_err);
+                }
+            }
+        }
+        return Err(e.into());
+    }
     let _ = page.wait_for_navigation().await;
     let status = page
         .evaluate("performance.getEntriesByType('navigation')[0]?.responseStatus ?? 0")

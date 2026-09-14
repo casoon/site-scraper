@@ -17,15 +17,16 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip", "brotli", "deflate"] }
-scraper = "0.22"
+scraper = "0.27"
 lol_html = "2"
 url = "2"
 regex = "1"
-rand = "0.8"
+rand = "0.9"
 pathdiff = "0.2"
 imagesize = "0.13"
 image = { version = "0.25", default-features = false, features = ["png"] }
 dialoguer = "0.11"
 chromiumoxide = { version = "0.9", optional = true }
 futures = { version = "0.3", optional = true }
-runemark = { version = "0.3.1", features = ["progress"] }
+runemark = { version = "0.3.3", features = ["progress"] }
+flate2 = "1"

@@ -29,10 +29,12 @@ fn output() -> &'static Output {
     OUTPUT.get_or_init(|| {
         let is_terminal = std::io::stderr().is_terminal();
         let console = Console::stderr(ColorMode::Auto);
+        let progress = TerminalProgress::stderr(ProgressMode::Auto, console, is_terminal);
         Output {
-            progress: TerminalProgress::stderr(ProgressMode::Auto, console, is_terminal),
+            // runemark falls back to plain lines where no bar can be drawn
+            interactive: progress.is_interactive(),
+            progress,
             console,
-            interactive: ProgressMode::Auto.is_interactive(is_terminal),
             started: AtomicBool::new(false),
         }
     })

@@ -104,7 +104,7 @@ Progress and per-page status lines go to stderr (with a progress bar in an inter
 | `--concurrency` | `4` | Number of parallel downloads |
 | `--delay-ms` | `300` | Delay between requests in milliseconds |
 | `--placeholder` | interactive / `external` | Image strategy: `real` (download originals), `local` (generated PNG), or `external` (placehold.co) |
-| `--sitemap` / `--no-sitemap` | on | Include sitemap.xml URLs as seeds |
+| `--sitemap` / `--no-sitemap` | on | Include sitemap URLs as seeds (from `robots.txt`, `sitemap.xml`, `sitemap_index.xml`, `wp-sitemap.xml`; gzipped sitemaps and sitemap indexes are followed) |
 | `--allow-external-assets` / `--no-allow-external-assets` | on | Download external CSS/JS or leave as-is |
 | `--bot` | interactive / `false` | Identify as crawler instead of simulating a browser |
 | `--headless` | `false` | Use Chrome/Chromium to render JavaScript before saving (requires Chrome installed) |

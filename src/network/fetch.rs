@@ -211,7 +211,7 @@ fn build_request_headers(url: &str) -> HeaderMap {
 async fn apply_delay() {
     let delay_ms = get_delay_ms();
     if delay_ms > 0 {
-        let jitter = rand::thread_rng().gen_range(0..std::cmp::max(1, delay_ms / 5));
+        let jitter = rand::rng().random_range(0..std::cmp::max(1, delay_ms / 5));
         tokio::time::sleep(Duration::from_millis(delay_ms + jitter)).await;
     }
 }

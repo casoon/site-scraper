@@ -25,7 +25,7 @@ External stylesheets and scripts are downloaded by default. Preserve their remot
 
 ## Sitemap discovery
 
-`sitemap.xml` URLs are included as seeds by default. Use `--no-sitemap` to crawl only from links
+Sitemap URLs are included as seeds by default — from `Sitemap:` lines in `robots.txt` and from `sitemap.xml`, `sitemap_index.xml` and `wp-sitemap.xml`, including gzipped sitemaps and nested sitemap indexes. Use `--no-sitemap` to crawl only from links
 discovered below the starting URL.
 
 ## Pacing
