@@ -1,0 +1,38 @@
+[36mℹ Crawling https://www.casoon.de/[0m
+[2m✔ https://www.casoon.de/ → index.html[0m
+[2m✔ https://www.casoon.de/ratgeber/ → ratgeber/index.html[0m
+[2m✔ https://www.casoon.de/joern-seidel/ → joern-seidel/index.html[0m
+[2m✔ https://www.casoon.de/arbeitsweise/ → arbeitsweise/index.html[0m
+[2m✔ https://www.casoon.de/ki/ → ki/index.html[0m
+[2m✔ https://www.casoon.de/hotellerie/rostock/ → hotellerie/rostock/index.html[0m
+[2m✔ https://www.casoon.de/impressum/ → impressum/index.html[0m
+[2m✔ https://www.casoon.de/tool-engineering/ → tool-engineering/index.html[0m
+[2m✔ https://www.casoon.de/technologien/ → technologien/index.html[0m
+[2m✔ https://www.casoon.de/handwerker/rostock/ → handwerker/rostock/index.html[0m
+[2m✔ https://www.casoon.de/praxis/rostock/ → praxis/rostock/index.html[0m
+[2m✔ https://www.casoon.de/ki-automatisierung/ → ki-automatisierung/index.html[0m
+[2m✔ https://www.casoon.de/kanzlei/rostock/ → kanzlei/rostock/index.html[0m
+[2m✔ https://www.casoon.de/kollaboration/ → kollaboration/index.html[0m
+[2m✔ https://www.casoon.de/agb/ → agb/index.html[0m
+[2m✔ https://www.casoon.de/leistungskatalog/ → leistungskatalog/index.html[0m
+[2m✔ https://www.casoon.de/kontakt/ → kontakt/index.html[0m
+[2m✔ https://www.casoon.de/strategieberatung/ → strategieberatung/index.html[0m
+[2m✔ https://www.casoon.de/existenzgruendung-webdesign-foerderung/ → existenzgruendung-webdesign-foerderung/index.html[0m
+[2m✔ https://www.casoon.de/cloud-entwicklung/ → cloud-entwicklung/index.html[0m
+[2m✔ https://www.casoon.de/gastronomie/rostock/ → gastronomie/rostock/index.html[0m
+[2m✔ https://www.casoon.de/usp/ → usp/index.html[0m
+[2m✔ https://www.casoon.de/dienstleister/rostock/ → dienstleister/rostock/index.html[0m
+[2m✔ https://www.casoon.de/datenschutz/ → datenschutz/index.html[0m
+[2m✔ https://www.casoon.de/webentwicklung/ → webentwicklung/index.html[0m
+[2m✔ https://www.casoon.de/e-commerce/ → e-commerce/index.html[0m
+[2m✔ https://www.casoon.de/mittelstand/rostock/ → mittelstand/rostock/index.html[0m
+[2m✔ https://www.casoon.de/wartung-und-support/ → wartung-und-support/index.html[0m
+[2m✔ https://www.casoon.de/ferienwohnung/rostock/ → ferienwohnung/rostock/index.html[0m
+[2m✔ https://www.casoon.de/plattform-apps/ → plattform-apps/index.html[0m
+[2m✔ https://www.casoon.de/picks/ → picks/index.html[0m
+[2m✔ https://www.casoon.de/ferienwohnung/mecklenburg-vorpommern/ → ferienwohnung/mecklenburg-vorpommern/index.html[0m
+[2m✔ https://www.casoon.de/seo-marketing/ → seo-marketing/index.html[0m
+[1;92m✔[0m https://www.casoon.de/ → output/www.casoon.de
+
+  [2mPages: [0m[36m33[0m   [2mFailed: [0m[36m0[0m   [2mWarnings: [0m[36m0[0m   [2mDuration: [0m[36m11s[0m
+

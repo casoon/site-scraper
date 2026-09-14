@@ -10,6 +10,14 @@ const files = import.meta.glob<string>('../../examples/*.txt', {
 
 const examples_ = [
   {
+    slug: 'crawl-casoon',
+    title: 'Mirror a real site',
+    file: 'crawl-casoon.txt',
+    command: 'site-scraper https://www.casoon.de --max-depth 1 --no-sitemap --placeholder local',
+    tags: ['crawl', 'output'],
+    description: 'Real output from mirroring casoon.de: every saved page with its local file, then a summary with pages, failures and duration.',
+  },
+  {
     slug: 'crawl-help',
     title: 'Crawl command',
     file: 'crawl-help.txt',

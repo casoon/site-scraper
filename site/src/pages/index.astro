@@ -12,7 +12,7 @@ import {
   Terminal,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
-import help from '../../../examples/crawl-help.txt?raw';
+import crawl from '../../../examples/crawl-casoon.txt?raw';
 import screenshotHelp from '../../../examples/screenshot-help.txt?raw';
 
 const quickstart = `# Mirror a site with browser-like request headers
@@ -47,7 +47,7 @@ open output/www.example.com/index.html`;
       <Badge>Rust CLI</Badge>
       <Badge>Linux + macOS</Badge>
     </Badges>
-    <Terminal slot="output" title="site-scraper --help" dots ansi={help} />
+    <Terminal slot="output" title="site-scraper https://www.casoon.de --max-depth 1 --no-sitemap --placeholder local" dots ansi={crawl} />
   </Hero>
 
   <Facts
