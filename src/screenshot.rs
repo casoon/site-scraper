@@ -67,8 +67,15 @@ pub async fn run(
         tokio::fs::create_dir_all(output)
             .await
             .with_context(|| format!("Cannot create output directory {}", output.display()))?;
-        crate::headless::screenshot::capture_all(&chrome, jobs, output, concurrency, device, timeout)
-            .await
+        crate::headless::screenshot::capture_all(
+            &chrome,
+            jobs,
+            output,
+            concurrency,
+            device,
+            timeout,
+        )
+        .await
     }
 
     #[cfg(not(feature = "headless"))]
