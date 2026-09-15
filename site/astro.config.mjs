@@ -12,7 +12,7 @@ export default defineConfig({
       description:
         'A fast Rust CLI for creating self-contained static copies and full-page screenshots of websites.',
       repo: 'casoon/site-scraper',
-      version: '1.4.4',
+      version: '1.4.5',
       license: 'MIT',
       packages: [
         { label: 'Releases', href: 'https://github.com/casoon/site-scraper/releases' },
