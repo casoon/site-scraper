@@ -6,9 +6,14 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## Unreleased
 
+## [1.4.6] - 2026-09-15
+
+- Security: update `rustls` to 0.23.45 (RUSTSEC-2026-0285)
 - Sitemap: also read `Sitemap:` entries from `robots.txt` and `/wp-sitemap.xml`, unpack gzipped sitemaps and decode XML entities in `<loc>`
 - Headless: treat an HTTP error with an empty body as its status, so stale sitemap entries only warn
 - Update `scraper` to 0.27, `rand` to 0.9 and `anyhow` to 1.0.104 (clears the `rand`/`fxhash` cargo-audit warnings)
+- Update `runemark` to 0.3.3: status lines are no longer lost when `TERM` is unset or `dumb`
+- Pages: show real crawl output of casoon.de on the project site
 
 ## [1.4.5] - 2026-09-12
 
