@@ -12,6 +12,7 @@ import {
   Terminal,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
+import config from 'virtual:casoon-pages/config';
 import crawl from '../../../examples/crawl-casoon.txt?raw';
 import screenshotHelp from '../../../examples/screenshot-help.txt?raw';
 
@@ -43,7 +44,7 @@ open output/www.example.com/index.html`;
     />
     <Badges>
       <Badge>MIT</Badge>
-      <Badge>v1.4.6</Badge>
+      <Badge>v{config.version}</Badge>
       <Badge>Rust CLI</Badge>
       <Badge>Linux + macOS</Badge>
     </Badges>
