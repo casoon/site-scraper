@@ -234,13 +234,19 @@ in `astro.config.mjs`.
   `website`, the project's catalog entry on casoon.dev and the catalog itself, all with
   descriptive text in the page's `lang`.
 
-`casoon.github.io` has no root repository, so there is no root `robots.txt` pointing at the
-sitemaps. Register each site in Google Search Console instead, once per project:
+The root `https://casoon.github.io/` comes from the repository `casoon/casoon.github.io`: an
+overview of the project sites, the only `robots.txt` crawlers read for the domain (one `Sitemap:`
+line per project), and the Google Search Console verification. Its URL-prefix property
+`https://casoon.github.io/` covers every project site, so a project needs no property and no
+verification file of its own. For a new site:
 
-1. *Add property* → *URL prefix* → `https://casoon.github.io/<repo>/`.
-2. Verify ownership with the *HTML file* method: put the downloaded `google<id>.html` into the
-   project's `site/public/` and deploy; it is served at `https://casoon.github.io/<repo>/google<id>.html`.
-3. *Sitemaps* → submit `sitemap.xml` (resolved against the prefix).
+1. Deploy it and check that `https://casoon.github.io/<repo>/sitemap.xml` answers 200.
+2. In `casoon/casoon.github.io`, add `Sitemap: https://casoon.github.io/<repo>/sitemap.xml` to
+   `robots.txt` and the site to `index.html`, then push.
+3. In the property `https://casoon.github.io/`, *Sitemaps* → submit `<repo>/sitemap.xml`.
+
+Never set a custom domain on `casoon/casoon.github.io`: GitHub would redirect every project site
+to it as well.
 
 ## Rules the theme enforces
 
