@@ -8,6 +8,9 @@ All notable changes to this project are documented here. Format loosely follows
 
 ### Changed
 
+- **Installer:** on an Intel Mac `install.sh` stops with a clear message and the command to build
+  from source, instead of failing on a download that does not exist. Supported platforms:
+  [Installation](https://casoon.github.io/site-scraper/docs/getting-started/installation/).
 - **Pages:** the start page shows a recorded crawl of casoon.dev and a diagram of how a crawl
   works; the new guide [How a crawl works](https://casoon.github.io/site-scraper/docs/guides/how-a-crawl-works/)
   walks through one run, and the [CLI reference](https://casoon.github.io/site-scraper/docs/reference/cli/)
