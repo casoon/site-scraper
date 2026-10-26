@@ -1,0 +1,31 @@
+# A real crawl of casoon.dev (site-scraper 1.4.6, recorded 2026-10-26), followed by a look at
+# the static copy it wrote. Recorded once from exec: steps with castwright --record; see
+# capture.sh to record it again.
+version: 1
+terminal:
+  title: site-scraper
+  cols: 64
+  rows: 14
+  theme: catppuccin-mocha
+steps:
+  - run: site-scraper https://casoon.dev --max-depth 1 --no-sitemap
+    speed: 18
+  - output:
+      raw: "\e[36mℹ Crawling https://casoon.dev/\e[0m
+
+        \e[36m⠁\e[0m [00:00:00] [\e[36m\e[34m----------------------------------------\e[0m\e[0m] 0/1 (0s)                                                                \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠁\e[0m [00:00:00] [\e[36m\e[34m----------------------------------------\e[0m\e[0m] 0/1 (0s) Crawling                                                       \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[2m✔ https://casoon.dev/ → index.html\e[0m                              \e[36m⠁\e[0m [00:00:01] [\e[36m\e[34m----------------------------------------\e[0m\e[0m] 0/1 (0s) Crawling                                                       \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠁\e[0m [00:00:01] [\e[36m########################################\e[34m\e[0m\e[0m] 1/1 (0s) Crawling                                                       \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠁\e[0m [00:00:01] [\e[36m########################################\e[34m\e[0m\e[0m] 1/1 (0s) https://casoon.dev/                                            \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠁\e[0m [00:00:01] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (3s) https://casoon.dev/                                            \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠁\e[0m [00:00:01] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (3s) Crawling                                                       \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[2m✔ https://casoon.dev/en/ → en/index.html\e[0m                        \e[36m⠁\e[0m [00:00:02] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (4s) Crawling                                                       \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠉\e[0m [00:00:02] [\e[36m##########################>\e[34m-------------\e[0m\e[0m] 2/3 (1s) Crawling                                                       \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠉\e[0m [00:00:02] [\e[36m##########################>\e[34m-------------\e[0m\e[0m] 2/3 (1s) https://casoon.dev/en/                                         \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠙\e[0m [00:00:02] [\e[36m########################################\e[34m\e[0m\e[0m] 3/3 (0s) https://casoon.dev/en/                                         \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m⠙\e[0m [00:00:02] [\e[36m########################################\e[34m\e[0m\e[0m] 3/3 (0s) https://casoon.dev/sitemap.xml                                 \e[1A\r\e[2K\e[1B\r\e[2K\e[1A\e[36m \e[0m [00:00:02] [\e[36m########################################\e[34m\e[0m\e[0m] 3/3 (0s) \e[1;92m✔\e[0m Done                                                        \ 
+
+        \e[1;92m✔\e[0m https://casoon.dev/ → output/casoon.dev
+
+
+        \  \e[2mPages: \e[0m\e[36m3\e[0m   \e[2mFailed: \e[0m\e[36m0\e[0m   \e[2mWarnings: \e[0m\e[36m0\e[0m   \e[2mDuration: \e[0m\e[36m2s\e[0m
+
+        \n"
+    delay: 200
+  - wait: 1200
+  - run: ls output/casoon.dev
+    speed: 18
+  - output:
+      raw: |
+        _astro		en		fonts		index.html
+  - wait: 5000

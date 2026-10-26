@@ -2,100 +2,154 @@
 import {
   Badge,
   Badges,
-  BuildOutput,
+  Button,
   CodeBlock,
   Facts,
   Features,
   Hero,
   Install,
   Quickstart,
-  Terminal,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import config from 'virtual:casoon-pages/config';
-import crawl from '../../../examples/crawl-casoon.txt?raw';
-import screenshotHelp from '../../../examples/screenshot-help.txt?raw';
+import { url } from '@casoon/pages-theme/url';
+// Animated SVG built with castwright from site/captures/crawl.terminal.yaml (a recorded real run).
+import crawlSvg from '../../captures/crawl.svg?url';
+import Diagram from '../components/Diagram.astro';
 
-const quickstart = `# Mirror a site with browser-like request headers
-site-scraper https://www.example.com \\
-  --max-depth 2 \\
-  --placeholder real
-
-# Open the generated copy
+const quickstart = `site-scraper https://www.example.com --max-depth 2
 open output/www.example.com/index.html`;
 ---
 
 <Base>
   <Hero
     title="Take a website with you."
-    lead="site-scraper follows internal links, downloads pages and assets, and rewrites references into a self-contained local copy. Use headless Chrome when the page needs JavaScript, or capture full-page screenshots without mirroring anything."
+    lead="site-scraper copies a website into a folder that opens without a server: pages, stylesheets, scripts, fonts and images, with every link pointing to the local files. It also takes full-page screenshots of one URL or a whole list."
   >
     <Install
       commands={[
         {
-          label: 'curl',
+          label: 'macOS · Linux',
           command: 'curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash',
         },
         {
           label: 'cargo',
-          command: 'cargo install --git https://github.com/casoon/site-scraper',
+          command: 'cargo install --git https://github.com/casoon/site-scraper --features headless',
         },
       ]}
     />
     <Badges>
-      <Badge>MIT</Badge>
+      <Badge>Free · MIT</Badge>
       <Badge>v{config.version}</Badge>
       <Badge>Rust CLI</Badge>
-      <Badge>Linux + macOS</Badge>
+      <Badge>macOS · Linux</Badge>
     </Badges>
-    <Terminal slot="output" title="site-scraper https://www.casoon.de --max-depth 1 --no-sitemap --placeholder local" dots ansi={crawl} />
+    <img
+      slot="output"
+      class="terminal-demo"
+      src={crawlSvg}
+      width="561.6"
+      height="296"
+      alt="Terminal: site-scraper https://casoon.dev --max-depth 1 --no-sitemap prints 'Crawling https://casoon.dev/', saves https://casoon.dev/ as index.html and https://casoon.dev/en/ as en/index.html, fills a progress bar to 3/3 and ends with 'https://casoon.dev/ → output/casoon.dev' and 'Pages: 3, Failed: 0, Warnings: 0, Duration: 2s'. ls output/casoon.dev then lists _astro, en, fonts and index.html."
+    />
   </Hero>
+
+  <Features
+    heading="What it is for"
+    items={[
+      {
+        title: 'Before a relaunch',
+        body: 'Moving a client site from WordPress, TYPO3 or another CMS? Keep a complete copy of the old site as a reference for content and layout, as plain files you can open, pass on or archive, whether or not the old system stays online.',
+      },
+      {
+        title: 'Sites that need JavaScript',
+        body: 'With --headless the pages are rendered in your local Chrome first, so content from React, Vue or other client-side frameworks ends up in the copy.',
+      },
+      {
+        title: 'Screenshots in bulk',
+        body: 'site-scraper screenshot captures full-page PNGs of one URL or a list, in desktop, tablet or mobile size, for design reviews and before/after comparisons.',
+      },
+    ]}
+  />
 
   <Facts
     items={[
-      { value: '3', label: 'image strategies' },
-      { value: '2', label: 'crawl engines: HTTP and headless Chrome' },
-      { value: '4', label: 'prebuilt release targets' },
-      { value: '1', label: 'command for batch screenshots' },
+      { value: '36', label: 'pages of casoon.de copied in 14 s, 0 failed' },
+      { value: '3', label: 'ways to handle images: originals, local or external placeholders' },
+      { value: '3', label: 'screenshot sizes: desktop, tablet, mobile' },
+      { value: '3', label: 'prebuilt releases: Linux x86_64 and arm64, macOS arm64' },
     ]}
   />
 
-  <Features
-    items={[
-      {
-        title: 'Self-contained static copies',
-        body: 'HTML, CSS, JavaScript and fonts are saved locally. References are rewritten to relative paths so the result can be opened without the original CMS.',
-      },
-      {
-        title: 'Choose how images travel',
-        body: 'Download originals, generate local gray placeholders, or replace images with external placehold.co URLs.',
-      },
-      {
-        title: 'Render JavaScript-heavy pages',
-        body: 'The optional headless mode launches local Chrome or Chromium, waits for frameworks, scrolls the page, and saves the rendered HTML.',
-      },
-      {
-        title: 'Screenshot one URL or a list',
-        body: 'The screenshot subcommand captures full-page PNGs with deterministic filenames and bounded browser concurrency.',
-      },
-    ]}
-  />
-
-  <BuildOutput
-    caption="The command reference shown here is captured from the current CLI, and the same fixture is used by the showcase."
-    file="examples/screenshot-help.txt"
-  >
-    <Terminal title="site-scraper screenshot --help" ansi={screenshotHelp} />
-  </BuildOutput>
+  <section class="how" aria-labelledby="how-heading">
+    <h2 id="how-heading">How it works</h2>
+    <div class="text">
+      <p>
+        You give site-scraper a start URL. It reads the site's sitemap as well, fetches each page,
+        downloads what the page needs and rewrites every reference so that it points to the local
+        copy. The page lands in <code>output/&lt;domain&gt;/</code> under the same path it had on
+        the web.
+      </p>
+      <p>
+        Links to other pages of the same site go back into the queue, one level deeper each time,
+        until the depth you chose is reached. A short pause between requests keeps the load on the
+        site low, and a summary at the end tells you what was saved and what failed.
+      </p>
+    </div>
+    <Diagram name="how-it-works" format="svg" narrow={{ width: 340, height: 600 }} />
+    <div class="links">
+      <Button href={url('docs/guides/how-a-crawl-works/')} variant="secondary">How a crawl works in detail</Button>
+      <Button href={url('docs/guides/headless-and-screenshots/')} variant="secondary">Headless mode and screenshots</Button>
+      <Button href={url('docs/reference/cli/')} variant="quiet">All options →</Button>
+    </div>
+  </section>
 
   <Quickstart
-    lead="Three steps from a live URL to a local copy. The documentation covers every crawl mode and option."
+    lead="Install it, point it at a site and open the copy. Given only a URL, site-scraper asks for depth, images and mode in a short menu."
     steps={[
-      'Install the latest release or build the Rust binary from source.',
-      'Run <code>site-scraper</code> with a URL; add flags to skip the interactive setup.',
-      'Open the generated files under <code>output/&lt;domain&gt;/</code>.',
+      'Install it with one of the lines above; headless mode and screenshots also need Chrome or Chromium.',
+      'Run <code>site-scraper</code> with the URL of the site.',
+      'Open <code>output/&lt;domain&gt;/index.html</code> in your browser.',
     ]}
   >
-    <CodeBlock code={quickstart} lang="shell" title="terminal" label="Shell" />
+    <CodeBlock code={quickstart} lang="sh" label="Two commands" />
   </Quickstart>
 </Base>
+
+<style>
+  /* Never scale the SVG beyond a readable terminal size. */
+  .terminal-demo {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .how {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+  h2 {
+    margin: 0 0 14px;
+    color: var(--heading);
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .text {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 0 48px;
+  }
+  .text p {
+    margin: 0 0 16px;
+    font-size: 15.5px;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+</style>
