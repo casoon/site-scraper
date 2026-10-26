@@ -23,6 +23,8 @@ site-scraper <URL> [OPTIONS]
 | `--screenshot` | off | Save each crawled page as a full-page PNG; requires `--headless`. |
 | `--user-agent <VALUE>` | browser-like or bot identity | Override the User-Agent header. |
 | `--referer <VALUE>` | none | Set a custom Referer header. |
+| `--device <DEVICE>` | `desktop` | Viewport for `--headless`: `desktop`, `tablet` or `mobile` (see below). |
+| `--timeout <SECONDS>` | `60` | Browser navigation timeout for `--headless`; minimum 1. |
 
 Passing only the URL in an interactive terminal opens the guided setup. Supplying any option uses
 its explicit value and the non-interactive defaults for the rest.
@@ -41,5 +43,15 @@ Exactly one URL source is required.
 | `--file <FILE>` | none | UTF-8 file containing one URL per line. |
 | `--output <DIR>` | `screenshots` | Destination directory. |
 | `--concurrency <N>` | `2` | Parallel browser pages; minimum 1. |
+| `--device <DEVICE>` | `desktop` | Viewport: `desktop`, `tablet` or `mobile`. |
+| `--timeout <SECONDS>` | `60` | Seconds to wait for navigation before a URL fails; minimum 1. |
 
 Both commands support `--help`; the main command also supports `--version`.
+
+## Devices
+
+| Device | Viewport |
+| --- | --- |
+| `desktop` | 1440 × 900 |
+| `tablet` | 768 × 1024 |
+| `mobile` | 375 × 812 with mobile emulation: device scale factor, touch and a mobile User-Agent |

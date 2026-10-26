@@ -1,0 +1,18 @@
+# Source of crawl.terminal.yaml: castwright --allow-exec --record runs these steps once and
+# replaces them with what they printed (see capture.sh).
+version: 1
+terminal:
+  title: site-scraper
+  cols: 64
+  rows: 14
+  theme: catppuccin-mocha
+steps:
+  - exec: site-scraper https://casoon.dev --max-depth 1 --no-sitemap
+    speed: 18
+    cwd: .work
+    timeout: 120000
+  - wait: 1200
+  - exec: ls output/casoon.dev
+    speed: 18
+    cwd: .work
+  - wait: 5000

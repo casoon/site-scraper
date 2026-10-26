@@ -37,6 +37,35 @@ https://www.example.com/about/
 site-scraper screenshot --file urls.txt --output shots/ --concurrency 2
 ```
 
+### A real capture
+
+This is casoon.dev as the screenshot subcommand saved it on 26 October 2026, with the default
+desktop viewport. The run took 9 seconds and wrote a PNG of 1440 × 5348 pixels; the image
+below is scaled to 960 pixels wide and converted to WebP for this page.
+
+```sh
+site-scraper screenshot https://casoon.dev/
+# screenshots/casoon.dev--index.png
+```
+
+<div class="capture" role="region" aria-label="Full-page screenshot of casoon.dev, scrollable" tabindex="0">
+  <img
+    src="../../../screens/casoon-dev-full-page.webp"
+    width="960"
+    height="3566"
+    loading="lazy"
+    alt="Full-page screenshot of casoon.dev: the header, the start section with the project count, featured projects with preview images, project groups for schools and accessibility, the category overview, the filterable catalog of all projects and the footer, captured top to bottom in one image."
+  />
+</div>
+
+<style>{`
+  .capture { max-height: 640px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; margin-block: 1.5rem; }
+  .capture img { display: block; width: 100%; height: auto; }
+`}</style>
+
+Use `--device tablet` or `--device mobile` for the other viewports; the
+[CLI reference](../../reference/cli/#devices) lists their sizes.
+
 Every URL is validated before Chrome starts. Files use readable, deterministic names such as
 `example.com--index.png` and `example.com--search--q-astro.png`; colliding names receive a stable
 short hash. Existing unrelated screenshots in the output directory are kept.

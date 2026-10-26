@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "type": "flow",
+  "title": "How site-scraper works",
+  "description": "site-scraper starts at one URL and, unless switched off, the URLs in the site's sitemap. It fetches each page, downloads its stylesheets, scripts and images, rewrites every reference to a relative local path and saves the page under output/<domain>/. Links to the same site go back into the queue until the maximum depth is reached.",
+  "source": "src/cli.rs, src/crawler.rs, src/processors/html.rs",
+  "width": 1120,
+  "height": 210,
+  "flow": {
+    "nodes": [
+      {
+        "id": "start",
+        "label": "Start URL",
+        "sublabel": "plus sitemap.xml",
+        "kind": "start"
+      },
+      {
+        "id": "fetch",
+        "label": "Fetch page",
+        "sublabel": "HTTP or headless Chrome"
+      },
+      {
+        "id": "assets",
+        "label": "Download assets",
+        "sublabel": "CSS, JS, images, fonts"
+      },
+      {
+        "id": "rewrite",
+        "label": "Rewrite references",
+        "sublabel": "to relative paths"
+      },
+      {
+        "id": "out",
+        "label": "output/<domain>/",
+        "sublabel": "opens offline",
+        "kind": "end"
+      }
+    ],
+    "edges": [
+      {
+        "from": "start",
+        "to": "fetch"
+      },
+      {
+        "from": "fetch",
+        "to": "assets"
+      },
+      {
+        "from": "assets",
+        "to": "rewrite"
+      },
+      {
+        "from": "rewrite",
+        "to": "out",
+        "label": "save"
+      },
+      {
+        "from": "rewrite",
+        "to": "fetch",
+        "label": "same-site links",
+        "dash": "dashed"
+      }
+    ],
+    "mainPath": [
+      "start",
+      "fetch",
+      "assets",
+      "rewrite",
+      "out"
+    ]
+  }
+}

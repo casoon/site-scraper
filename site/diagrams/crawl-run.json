@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "type": "flow",
+  "title": "One crawl run",
+  "description": "site-scraper follows redirects of the start URL, clears output/<domain>/ and, when the sitemap is on and the depth is at least 1, reads the sitemaps listed in robots.txt and at the well-known paths. Each round fetches all unseen URLs in parallel. Responses that are not HTML are skipped; HTML pages get their stylesheets, scripts and images downloaded, references rewritten and the page written to disk. Same-origin links go into the next round while the page's depth is below the maximum depth. At the end a summary lists pages, failures, warnings and duration.",
+  "source": "src/cli.rs, src/crawler.rs, src/parsers/sitemap.rs, src/parsers/links.rs, src/processors/html.rs, src/processors/stylesheet.rs, src/processors/image.rs",
+  "width": 960,
+  "height": 1338,
+  "flow": {
+    "lanes": [
+      {
+        "id": "local",
+        "label": "site-scraper"
+      },
+      {
+        "id": "site",
+        "label": "The website"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "run",
+        "label": "site-scraper <URL>",
+        "sublabel": "flags or guided setup",
+        "kind": "start",
+        "lane": "local"
+      },
+      {
+        "id": "redirect",
+        "label": "Follow redirects",
+        "sublabel": "e.g. www to bare domain",
+        "kind": "external",
+        "lane": "site"
+      },
+      {
+        "id": "clear",
+        "label": "Clear output/<domain>/",
+        "kind": "store",
+        "lane": "local"
+      },
+      {
+        "id": "seed",
+        "label": "Sitemap on, depth ≥ 1?",
+        "kind": "decision",
+        "lane": "local"
+      },
+      {
+        "id": "sitemap",
+        "label": "robots.txt, sitemap.xml",
+        "sublabel": "same-origin URLs",
+        "kind": "external",
+        "lane": "site"
+      },
+      {
+        "id": "queue",
+        "label": "Next round",
+        "sublabel": "unseen URLs, in parallel",
+        "lane": "local"
+      },
+      {
+        "id": "fetch",
+        "label": "GET page",
+        "sublabel": "delay, 3 tries",
+        "kind": "external",
+        "lane": "site"
+      },
+      {
+        "id": "html",
+        "label": "text/html?",
+        "kind": "decision",
+        "lane": "local"
+      },
+      {
+        "id": "assets",
+        "label": "CSS, JS, images",
+        "sublabel": "per placeholder mode",
+        "kind": "external",
+        "lane": "site"
+      },
+      {
+        "id": "rewrite",
+        "label": "Rewrite references",
+        "sublabel": "relative local paths",
+        "lane": "local"
+      },
+      {
+        "id": "save",
+        "label": "<path>/index.html",
+        "kind": "store",
+        "lane": "local"
+      },
+      {
+        "id": "depth",
+        "label": "Below max depth?",
+        "kind": "decision",
+        "lane": "local"
+      },
+      {
+        "id": "summary",
+        "label": "Summary",
+        "sublabel": "pages, failed, duration",
+        "kind": "end",
+        "lane": "local"
+      }
+    ],
+    "edges": [
+      {
+        "from": "run",
+        "to": "redirect"
+      },
+      {
+        "from": "redirect",
+        "to": "clear"
+      },
+      {
+        "from": "clear",
+        "to": "seed"
+      },
+      {
+        "from": "seed",
+        "to": "sitemap",
+        "label": "yes"
+      },
+      {
+        "from": "seed",
+        "to": "queue",
+        "label": "no",
+        "dash": "dashed"
+      },
+      {
+        "from": "sitemap",
+        "to": "queue"
+      },
+      {
+        "from": "queue",
+        "to": "fetch"
+      },
+      {
+        "from": "fetch",
+        "to": "html"
+      },
+      {
+        "from": "html",
+        "to": "assets",
+        "label": "yes"
+      },
+      {
+        "from": "assets",
+        "to": "rewrite"
+      },
+      {
+        "from": "rewrite",
+        "to": "save"
+      },
+      {
+        "from": "save",
+        "to": "depth"
+      },
+      {
+        "from": "depth",
+        "to": "queue",
+        "label": "yes: same-origin links",
+        "dash": "dashed"
+      },
+      {
+        "from": "depth",
+        "to": "summary",
+        "label": "queue empty"
+      }
+    ],
+    "mainPath": [
+      "run",
+      "redirect",
+      "clear",
+      "seed",
+      "sitemap",
+      "queue",
+      "fetch",
+      "html",
+      "assets",
+      "rewrite",
+      "save",
+      "depth",
+      "summary"
+    ],
+    "orientation": "portrait"
+  }
+}
