@@ -18,8 +18,9 @@ order: 1
 curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash
 ```
 
-The installer detects Linux or macOS and x86_64 or arm64. It installs the latest release to
-`~/.local/bin` unless `INSTALL_DIR` is set.
+The installer detects the platform and installs the latest release to `~/.local/bin` unless
+`INSTALL_DIR` is set. Release binaries exist for Linux (x86_64, arm64) and macOS on Apple silicon
+(arm64); on any other platform, use Cargo or build from source.
 
 </div>
 <div slot="cargo">

@@ -21,6 +21,15 @@ case "$ARCH" in
     *)             echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
+# Release binaries for macOS exist only for Apple silicon.
+if [ "$OS_TAG" = "macos" ] && [ "$ARCH_TAG" = "x86_64" ]; then
+    echo "Error: Intel Macs are not supported by the prebuilt binaries."
+    echo "Build from source instead:"
+    echo ""
+    echo "  cargo install --git https://github.com/${REPO}"
+    exit 1
+fi
+
 ASSET_NAME="${BINARY}-${OS_TAG}-${ARCH_TAG}.tar.gz"
 
 # Get latest release tag
