@@ -42,6 +42,21 @@ echo "Downloading ${DOWNLOAD_URL}..."
 curl -fsSL "$DOWNLOAD_URL" -o "${TMP_DIR}/${ASSET_NAME}" \
     || { echo "Error: Download failed. Check your internet connection or try again later."; exit 1; }
 
+echo "Verifying checksum..."
+EXPECTED=$(curl -fsSL "https://github.com/${REPO}/releases/download/${TAG}/SHA256SUMS" \
+    | awk -v n="$ASSET_NAME" '$2 == n { print $1 }') \
+    || { echo "Error: Could not fetch SHA256SUMS."; exit 1; }
+if command -v sha256sum >/dev/null 2>&1; then
+    ACTUAL=$(sha256sum "${TMP_DIR}/${ASSET_NAME}" | cut -d ' ' -f 1)
+elif command -v shasum >/dev/null 2>&1; then
+    ACTUAL=$(shasum -a 256 "${TMP_DIR}/${ASSET_NAME}" | cut -d ' ' -f 1)
+else
+    echo "Error: no sha256sum or shasum found; cannot verify the download."; exit 1
+fi
+if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then
+    echo "Error: checksum mismatch for ${ASSET_NAME} ${TAG}; not installing."; exit 1
+fi
+
 echo "Extracting..."
 tar -xzf "${TMP_DIR}/${ASSET_NAME}" -C "$TMP_DIR"
 

@@ -25,6 +25,18 @@ Custom install directory:
 INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/casoon/site-scraper/main/install.sh | bash
 ```
 
+The installer checks the download against the release's `SHA256SUMS` before installing it.
+
+Official binaries come only from the
+[GitHub releases of `casoon/site-scraper`](https://github.com/casoon/site-scraper/releases) —
+built there by the release workflow, never on a developer machine. To verify a
+download by hand, check the hash and the signed build provenance:
+
+```bash
+grep " <file>.tar.gz" SHA256SUMS | shasum -a 256 -c
+gh attestation verify <file>.tar.gz --repo casoon/site-scraper
+```
+
 ### via Cargo
 
 ```sh
