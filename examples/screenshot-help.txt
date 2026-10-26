@@ -3,10 +3,37 @@ Only take full-page screenshots of one URL or a list of URLs (requires Chrome)
 Usage: site-scraper screenshot [OPTIONS] [URL]
 
 Arguments:
-  [URL]  URL to screenshot
+  [URL]
+          URL to screenshot
 
 Options:
-      --file <FILE>                Text file with one URL per line (blank lines and # comments are ignored)
-      --output <OUTPUT>            Output directory (existing screenshots are kept) [default: screenshots]
-      --concurrency <CONCURRENCY>  Number of parallel browser pages [default: 2]
-  -h, --help                       Print help
+      --file <FILE>
+          Text file with one URL per line (blank lines and # comments are ignored)
+
+      --output <OUTPUT>
+          Output directory (existing screenshots are kept)
+          
+          [default: screenshots]
+
+      --concurrency <CONCURRENCY>
+          Number of parallel browser pages
+          
+          [default: 2]
+
+      --device <DEVICE>
+          Viewport to render with
+
+          Possible values:
+          - desktop: 1440x900 (default)
+          - tablet:  768x1024
+          - mobile:  375x812 with mobile emulation (scale factor, touch, mobile user agent)
+          
+          [default: desktop]
+
+      --timeout <TIMEOUT>
+          Seconds to wait for browser navigation before failing
+          
+          [default: 60]
+
+  -h, --help
+          Print help (see a summary with '-h')

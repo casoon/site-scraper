@@ -8,21 +8,70 @@ Commands:
   help        Print this message or the help of the given subcommand(s)
 
 Arguments:
-  <URL>  URL to scrape
+  <URL>
+          URL to scrape
 
 Options:
-      --max-depth <MAX_DEPTH>      Maximum crawl depth relative to the start page
-      --concurrency <CONCURRENCY>  Number of parallel downloads [default: 4]
-      --delay-ms <DELAY_MS>        Delay between requests in milliseconds [default: 300]
-      --placeholder <PLACEHOLDER>  Image placeholder strategy: "real" (download originals), "local" (gray PNG), or "external" (placehold.co)
-      --sitemap                    Include sitemap.xml URLs as seeds (default)
-      --no-sitemap                 Don't use sitemap.xml URLs as seeds
-      --allow-external-assets      Download external CSS/JS (default)
-      --no-allow-external-assets   Leave external CSS/JS as-is instead of downloading
-      --bot                        Identify as bot/crawler instead of simulating a browser
-      --headless                   Use a headless Chrome/Chromium browser to render JavaScript (requires Chrome installed)
-      --screenshot                 Save a full-page screenshot for each crawled page (requires --headless)
-      --user-agent <USER_AGENT>    Custom User-Agent header
-      --referer <REFERER>          Custom Referer header
-  -h, --help                       Print help
-  -V, --version                    Print version
+      --max-depth <MAX_DEPTH>
+          Maximum crawl depth relative to the start page
+
+      --concurrency <CONCURRENCY>
+          Number of parallel downloads
+          
+          [default: 4]
+
+      --delay-ms <DELAY_MS>
+          Delay between requests in milliseconds
+          
+          [default: 300]
+
+      --placeholder <PLACEHOLDER>
+          Image placeholder strategy: "real" (download originals), "local" (gray PNG), or "external" (placehold.co)
+
+      --sitemap
+          Include sitemap.xml URLs as seeds (default)
+
+      --no-sitemap
+          Don't use sitemap.xml URLs as seeds
+
+      --allow-external-assets
+          Download external CSS/JS (default)
+
+      --no-allow-external-assets
+          Leave external CSS/JS as-is instead of downloading
+
+      --bot
+          Identify as bot/crawler instead of simulating a browser
+
+      --headless
+          Use a headless Chrome/Chromium browser to render JavaScript (requires Chrome installed)
+
+      --screenshot
+          Save a full-page screenshot for each crawled page (requires --headless)
+
+      --user-agent <USER_AGENT>
+          Custom User-Agent header
+
+      --referer <REFERER>
+          Custom Referer header
+
+      --device <DEVICE>
+          Viewport to render with (only used with --headless)
+
+          Possible values:
+          - desktop: 1440x900 (default)
+          - tablet:  768x1024
+          - mobile:  375x812 with mobile emulation (scale factor, touch, mobile user agent)
+          
+          [default: desktop]
+
+      --timeout <TIMEOUT>
+          Seconds to wait for browser navigation before failing (only used with --headless)
+          
+          [default: 60]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
