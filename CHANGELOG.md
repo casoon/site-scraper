@@ -4,7 +4,14 @@ All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/), versions match Git tags and the
 `version` field in `Cargo.toml`.
 
-## Unreleased
+## [Unreleased]
+
+### Changed
+
+- **Pages:** the start page shows a recorded crawl of casoon.dev and a diagram of how a crawl
+  works; the new guide [How a crawl works](https://casoon.github.io/site-scraper/docs/guides/how-a-crawl-works/)
+  walks through one run, and the [CLI reference](https://casoon.github.io/site-scraper/docs/reference/cli/)
+  lists `--device` and `--timeout`.
 
 ## [1.4.6] - 2026-09-15
 

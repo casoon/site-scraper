@@ -14,6 +14,7 @@ export default defineConfig({
       tagline: 'Static copies and screenshots of sites',
       repo: 'casoon/site-scraper',
       license: 'MIT',
+      mdxComponents: './src/mdx-components.ts',
       packages: [
         { label: 'Releases', href: 'https://github.com/casoon/site-scraper/releases' },
       ],

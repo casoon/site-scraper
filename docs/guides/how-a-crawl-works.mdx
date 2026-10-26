@@ -1,0 +1,49 @@
+---
+title: How a crawl works
+description: The steps of one run, from the start URL to the summary, and what each step does with the site.
+order: 0
+---
+
+A crawl runs in rounds. The first round holds the start URL and, with the sitemap switched on, the
+pages listed in the site's sitemaps. Every page that is fetched can add its same-site links to the
+next round, until no unseen URL is left or the maximum depth is reached.
+
+<Diagram name="crawl-run" />
+
+## Before the first request
+
+- **Redirects:** the start URL is requested once and its redirects are followed, so a crawl of
+  `https://www.example.com` that ends up on `https://example.com` uses the bare domain for the
+  output directory and for the same-site check.
+- **Output directory:** `output/<domain>/` is removed and created again. Each run leaves exactly
+  one snapshot per domain.
+- **Sitemap seeds:** with `--sitemap` (the default) and a depth of at least 1, site-scraper reads
+  the `Sitemap:` lines in `robots.txt` and the well-known paths `/sitemap.xml`,
+  `/sitemap_index.xml` and `/wp-sitemap.xml`. Sitemap indexes and gzipped sitemaps are unpacked;
+  only URLs on the same origin are kept, and they count as depth 1.
+
+## One page
+
+1. **Fetch:** a `GET` with browser-like headers (or `--bot` headers), after the configured delay
+   plus a little jitter, with up to three tries. In headless mode a Chrome tab loads and renders
+   the page instead; everything after this step is the same.
+2. **HTML only:** responses that are not `text/html`, such as a linked `sitemap.xml`, are counted
+   but not saved and add no links.
+3. **Assets:** stylesheets, scripts and images are downloaded in parallel. CSS files are
+   rewritten as well, so fonts and background images referenced with `url()` come along. External
+   CSS and JavaScript follow `--allow-external-assets`, images follow `--placeholder`
+   ([Images and assets](../images-and-assets/)).
+4. **Rewrite:** every reference, including links to other pages of the site, becomes a relative
+   local path, so the copy opens straight from disk.
+5. **Save:** the page is written to the path of its URL, with `index.html` for directories, for
+   example `https://example.com/blog/` to `blog/index.html`.
+6. **Links:** if the page is below `--max-depth`, its `<a href>` links on the same origin go into
+   the next round. `mailto:`, `tel:` and `javascript:` links and fragments are dropped, and a URL
+   is only fetched once.
+
+## The summary
+
+When the queue is empty, site-scraper prints the output directory and a summary with pages,
+failures, warnings and duration. A page that returns 404 but is listed in the sitemap only counts
+as a warning, because stale sitemap entries are common. Any other failed page makes the exit code
+`1` ([Output and exit codes](../../reference/output/)).
