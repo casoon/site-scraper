@@ -10,10 +10,10 @@
 # The start page scene crawl.svg is recorded separately, because castwright runs the
 # commands itself (exec: steps, needs node-pty; on macOS chmod +x its spawn-helper once).
 # crawl.exec.yaml holds the exec: steps; with site-scraper on PATH:
-#   cd site/captures && cp crawl.exec.yaml crawl.terminal.yaml && npx -y -p @casoon/castwright@0.4.0 -p shiki -p node-pty \
+#   cd site/captures && cp crawl.exec.yaml crawl.terminal.yaml && npx -y -p @casoon/castwright@0.5.0 -p shiki -p node-pty \
 #     castwright build crawl.terminal.yaml --allow-exec --record --format svg -o .
 # and remove the .work/ directory it crawled into. Rebuilding the recorded scene needs no network:
-#   cd site/captures && npx -y -p @casoon/castwright@0.4.0 -p shiki castwright build crawl.terminal.yaml --format svg -o .
+#   cd site/captures && npx -y -p @casoon/castwright@0.5.0 -p shiki castwright build crawl.terminal.yaml --format svg -o .
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
