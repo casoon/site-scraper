@@ -1,21 +1,32 @@
 ---
+import { readFile } from 'node:fs/promises';
 import {
   Badge,
   Badges,
   Button,
   CodeBlock,
   Facts,
+  Faq,
   Features,
   Hero,
   Install,
   Quickstart,
+  ReleaseHighlights,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import config from 'virtual:casoon-pages/config';
+import { parseChangelog } from '@casoon/pages-theme/lib/changelog';
 import { url } from '@casoon/pages-theme/url';
 // Animated SVG built with castwright from site/captures/crawl.terminal.yaml (a recorded real run).
 import crawlSvg from '../../captures/crawl.svg?url';
 import Diagram from '../components/Diagram.astro';
+
+// Skip "Unreleased": it has no version to show as "New in v…" yet.
+const latestRelease = config.changelog
+  ? parseChangelog(await readFile(config.changelog, 'utf8')).find(
+      (r) => r.version.toLowerCase() !== 'unreleased'
+    )
+  : undefined;
 
 const quickstart = `site-scraper https://www.example.com --max-depth 2
 open output/www.example.com/index.html`;
@@ -114,6 +125,29 @@ open output/www.example.com/index.html`;
   >
     <CodeBlock code={quickstart} lang="sh" label="Two commands" />
   </Quickstart>
+
+  {latestRelease && <ReleaseHighlights release={latestRelease} />}
+
+  <Faq
+    items={[
+      {
+        q: 'Do I need Chrome or Chromium installed?',
+        a: 'Only for --headless and for the screenshot subcommand, which both render with a local Chrome or Chromium. The default crawl is plain HTTP and needs nothing beyond site-scraper itself.',
+      },
+      {
+        q: 'How do I verify a downloaded release binary is genuine?',
+        a: "Check it against the release's SHA256SUMS and its signed build provenance attestation with gh attestation verify. install.sh does both automatically before installing.",
+      },
+      {
+        q: "Does the crawl follow a site's sitemap?",
+        a: 'By default, yes: robots.txt, sitemap.xml, sitemap_index.xml and wp-sitemap.xml are read as extra seed URLs, including gzipped sitemaps, and can be turned off with --no-sitemap.',
+      },
+      {
+        q: 'What happens if a page or screenshot fails?',
+        a: "It's reported with its status and the run continues; the overall exit code is 1 if anything failed, so scripts and CI can still detect it.",
+      },
+    ]}
+  />
 </Base>
 
 <style>
