@@ -16,6 +16,8 @@ All notable changes to this project are documented here. Format loosely follows
   walks through one run, and the [CLI reference](https://casoon.github.io/site-scraper/docs/reference/cli/)
   lists `--device` and `--timeout`.
 
+- Releases: every archive carries a signed build provenance attestation and the release has a `SHA256SUMS`; `install.sh` verifies the download against it before installing
+
 ## [1.4.6] - 2026-09-15
 
 - Security: update `rustls` to 0.23.45 (RUSTSEC-2026-0285)
