@@ -7,6 +7,10 @@ A fast CLI tool written in Rust that creates static copies of websites. It crawl
 
 [Read the full documentation →](https://casoon.github.io/site-scraper/)
 
+<p align="center">
+  <img src=".github/readme/site-scraper.svg" alt="site-scraper crawls a small local example site (three pages and a stylesheet), prints each saved page and the summary of 4 pages and 0 failures, then ls lists the saved files in output/127.0.0.1." width="900">
+</p>
+
 ## Why?
 
 When migrating client websites from a CMS (WordPress, TYPO3, Drupal, etc.) to a modern stack like Astro, the old site often needs to be preserved first. Site Scraper creates a complete static snapshot of the existing site before the relaunch -- as a reference, for content extraction, or simply as a backup. Instead of relying on the CMS staying online, you get a self-contained local copy with all HTML, CSS, JS and fonts in place.
