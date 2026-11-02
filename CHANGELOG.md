@@ -15,6 +15,8 @@ All notable changes to this project are documented here. Format loosely follows
   works; the new guide [How a crawl works](https://casoon.github.io/site-scraper/docs/guides/how-a-crawl-works/)
   walks through one run, and the [CLI reference](https://casoon.github.io/site-scraper/docs/reference/cli/)
   lists `--device` and `--timeout`.
+- **Pages:** the footer follows the page language instead of always showing German text, and the
+  start page now carries a release teaser and an FAQ (theme 0.11.1).
 
 - Releases: every archive carries a signed build provenance attestation and the release has a `SHA256SUMS`; `install.sh` verifies the download against it before installing
 
