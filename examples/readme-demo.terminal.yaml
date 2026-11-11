@@ -1,0 +1,33 @@
+version: 1
+
+# Recorded with: castwright build examples/readme-demo.terminal.yaml --allow-exec --record
+# SVG export:    castwright build examples/readme-demo.terminal.yaml --format svg --loop-delay 8000 -o <dir>
+#                (the file <dir>/readme-demo.svg is .github/readme/site-scraper.svg; a trailing wait: is dropped
+#                in SVG, the end frame holds for --loop-delay)
+
+terminal:
+  title: site-scraper
+  cols: 120
+  rows: 14
+  theme: catppuccin-mocha
+
+steps:
+  - run: site-scraper http://127.0.0.1:8765/ --max-depth 2 --placeholder local --delay-ms 0
+  - output:
+      raw: "\e[36mℹ Crawling http://127.0.0.1:8765/\e[0m
+
+        \e[36m⠁\e[0m [00:00:00] [\e[36m\e[34m----------------------------------------\e[0m\e[0m] 0/1 (0s)                                                        \r\e[2K\e[36m⠁\e[0m [00:00:00] [\e[36m\e[34m----------------------------------------\e[0m\e[0m] 0/1 (0s) Crawling                                               \r\e[2K\e[2m✔ http://127.0.0.1:8765/ → index.html\e[0m                                                                                   \e[36m⠁\e[0m [00:00:00] [\e[36m\e[34m----------------------------------------\e[0m\e[0m] 0/1 (0s) Crawling                                               \r\e[2K\e[36m⠁\e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 1/1 (0s) Crawling                                               \r\e[2K\e[36m⠁\e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 1/1 (0s) http://127.0.0.1:8765/                                 \r\e[2K\e[36m⠁\e[0m [00:00:00] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (0s) http://127.0.0.1:8765/                                 \r\e[2K\e[36m⠁\e[0m [00:00:00] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (0s) Crawling                                               \r\e[2K\e[2m✔ http://127.0.0.1:8765/contact.html → contact.html\e[0m                                                                     \e[36m⠁\e[0m [00:00:00] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (0s) Crawling                                               \r\e[2K\e[2m✔ http://127.0.0.1:8765/about.html → about.html\e[0m                                                                         \e[36m⠁\e[0m [00:00:00] [\e[36m#############>\e[34m--------------------------\e[0m\e[0m] 1/3 (0s) Crawling                                               \r\e[2K\e[36m⠉\e[0m [00:00:00] [\e[36m##########################>\e[34m-------------\e[0m\e[0m] 2/3 (0s) Crawling                                               \r\e[2K\e[36m⠉\e[0m [00:00:00] [\e[36m##########################>\e[34m-------------\e[0m\e[0m] 2/3 (0s) http://127.0.0.1:8765/about.html                       \r\e[2K\e[36m⠙\e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 3/3 (0s) http://127.0.0.1:8765/about.html                       \r\e[2K\e[36m⠙\e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 3/3 (0s) http://127.0.0.1:8765/contact.html                     \r\e[2K\e[36m⠙\e[0m [00:00:00] [\e[36m##############################>\e[34m---------\e[0m\e[0m] 3/4 (0s) http://127.0.0.1:8765/contact.html                     \r\e[2K\e[36m⠙\e[0m [00:00:00] [\e[36m##############################>\e[34m---------\e[0m\e[0m] 3/4 (0s) Crawling                                               \r\e[2K\e[2m✔ http://127.0.0.1:8765/index.html → index.html\e[0m                                                                         \e[36m⠙\e[0m [00:00:00] [\e[36m##############################>\e[34m---------\e[0m\e[0m] 3/4 (0s) Crawling                                               \r\e[2K\e[36m⠚\e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 4/4 (0s) Crawling                                               \r\e[2K\e[36m⠚\e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 4/4 (0s) http://127.0.0.1:8765/index.html                       \r\e[2K\e[36m \e[0m [00:00:00] [\e[36m########################################\e[34m\e[0m\e[0m] 4/4 (0s) \e[1;92m✔\e[0m Done                                                \ 
+
+        \e[1;92m✔\e[0m http://127.0.0.1:8765/ → output/127.0.0.1
+
+
+        \  \e[2mPages: \e[0m\e[36m4\e[0m   \e[2mFailed: \e[0m\e[36m0\e[0m   \e[2mWarnings: \e[0m\e[36m0\e[0m   \e[2mDuration: \e[0m\e[36m4s\e[0m
+
+        \n"
+    delay: 200
+  - wait: 1200
+  - run: ls output/127.0.0.1
+  - output:
+      raw: |
+        about.html	contact.html	index.html	style.css
+  - wait: 6000
