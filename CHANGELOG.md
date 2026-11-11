@@ -8,7 +8,7 @@ All notable changes to this project are documented here. Format loosely follows
 
 ### Changed
 
-- **Pages:** the project site uses the current shared theme (0.12.6).
+- **Pages:** the project site uses the current shared theme (0.12.8).
 - **Installer:** on an Intel Mac `install.sh` stops with a clear message and the command to build
   from source, instead of failing on a download that does not exist. Supported platforms:
   [Installation](https://casoon.github.io/site-scraper/docs/getting-started/installation/).
